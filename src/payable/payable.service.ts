@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
-import { PayableRepository } from './repository/payable-.repository';
+import { PayableRepository } from './repositories/payable-.repository';
 
 @Injectable()
 export class PayableService {

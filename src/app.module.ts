@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PaymentModule } from './payment/payable.module';
+import { PaymentModule } from './payable/payable.module';
+import { BalanceModule } from './balance/balance.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { PaymentModule } from './payment/payable.module';
       synchronize: true,
     }),
     PaymentModule,
+    BalanceModule,
   ],
   controllers: [],
   providers: [],

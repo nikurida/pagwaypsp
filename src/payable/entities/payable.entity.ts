@@ -14,6 +14,9 @@ export class Payable {
   transactionId: number;
 
   @Column()
+  customerId: number;
+
+  @Column()
   status: string;
 
   @Column()
