@@ -1,16 +1,35 @@
 version: '3.8'
 services:
   postgres:
-    image: postgres:12
+    image: postgres
     environment:
       POSTGRES_DB: pagwaydb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./initdb.d:/docker-entrypoint-initdb.d
-
-volumes:
-  pgdata:
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  transaction-service:
+    build: ./transaction-service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - rabbitmq
+      - postgres
+  payment-service:
+    build: ./payment-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      - rabbitmq
+      - postgres
+  balance-service:
+    build: ./balance-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres

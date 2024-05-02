@@ -6,22 +6,19 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Transaction {
+export class Payable {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  description: string;
+  transactionId: number;
 
   @Column()
-  cardholderName: string;
-
-  @Column()
-  cardLastFour: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
+  status: string;
 
   @Column()
   amount: number;
+
+  @CreateDateColumn()
+  paymentDate: Date;
 }
