@@ -6,4 +6,4 @@ import { PayableController } from './payable.controller';
   providers: [PayableService],
   controllers: [PayableController],
 })
-export class PaymentModule {}
+export class PayableModule {}

@@ -3,33 +3,47 @@ services:
   postgres:
     image: postgres
     environment:
-      POSTGRES_DB: pagwaydb
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      TZ: America/Cuiaba
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./initdb.d:/docker-entrypoint-initdb.d:rw,z
+
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
       - "15672:15672"
       - "5672:5672"
-  transaction-service:
-    build: ./transaction-service
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  transactions:
+    build: ./src/transactions
     ports:
       - "3000:3000"
     depends_on:
       - rabbitmq
       - postgres
-  payment-service:
-    build: ./payment-service
+
+  payable:
+    build: ./src/payable
     ports:
       - "3001:3001"
     depends_on:
       - rabbitmq
       - postgres
+
   balance-service:
-    build: ./balance-service
+    build: ./src/balance
     ports:
       - "3002:3002"
     depends_on:
       - postgres
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
