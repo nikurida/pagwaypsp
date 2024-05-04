@@ -1,15 +1,14 @@
-import { Customers } from 'src/customers/entitites/customers.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
   OneToOne,
   JoinColumn,
 } from 'typeorm';
+import { Customers } from './customers.entity';
 
 @Entity()
-export class Transaction {
+export class CustomersFee {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -21,17 +20,5 @@ export class Transaction {
   customer: Customers;
 
   @Column()
-  description: string;
-
-  @Column()
-  cardholderName: string;
-
-  @Column()
-  cardLastFour: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Column()
-  amount: number;
+  fee: number;
 }

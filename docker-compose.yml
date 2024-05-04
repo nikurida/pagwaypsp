@@ -11,7 +11,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./initdb.d:/docker-entrypoint-initdb.d:rw,z
 
   rabbitmq:
     image: "rabbitmq:3-management"
@@ -24,7 +23,7 @@ services:
   transactions:
     build: ./src/transactions
     ports:
-      - "3000:3000"
+      - "3000:3003"
     depends_on:
       - rabbitmq
       - postgres

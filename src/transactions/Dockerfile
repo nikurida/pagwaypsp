@@ -1,4 +1,3 @@
-# Escolha uma imagem de base
 FROM node:14-alpine
 
 WORKDIR /usr/src/app
@@ -13,4 +12,4 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/transactions/main.ts"]

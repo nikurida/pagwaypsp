@@ -10,6 +10,10 @@ import {
 import { Type } from 'class-transformer';
 
 export class CreateTransactionDto {
+  @IsNotEmpty()
+  @IsNumber()
+  customerId: number;
+
   @IsNumber()
   @Min(0.01)
   readonly amount: number;
