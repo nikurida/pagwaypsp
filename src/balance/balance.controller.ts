@@ -8,6 +8,6 @@ export class BalanceController {
 
   @Get(':customerId')
   async getBalance(@Param('customerId') customerId: number): Promise<Balance> {
-    return this.balanceService.calculateBalance(customerId);
+    return this.balanceService.findBalance(customerId);
   }
 }

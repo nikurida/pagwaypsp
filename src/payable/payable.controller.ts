@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { PayableService } from './payable.service';
 import { CreatePayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
@@ -10,10 +10,5 @@ export class PayableController {
   @Post()
   async create(@Body() createPayableDto: CreatePayableDto): Promise<Payable> {
     return this.payableService.create(createPayableDto);
-  }
-
-  @Get()
-  async findAll(): Promise<Payable[]> {
-    return this.payableService.findAll();
   }
 }

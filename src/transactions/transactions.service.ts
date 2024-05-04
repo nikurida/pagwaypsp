@@ -19,7 +19,7 @@ export class TransactionService {
 
     let transaction: Transaction;
     try {
-      this.transactionRepository.dataSource.transaction(
+      await this.transactionRepository.dataSource.transaction(
         async (entityManager) => {
           transaction = await entityManager.save(transactionBuilded);
 

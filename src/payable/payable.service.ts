@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { CreatePayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
-import { PayableRepository } from './repositories/payable-.repository';
+import { PayableRepository } from './repositories/payable.repository';
 import {
   ClientProxy,
   Ctx,
@@ -49,18 +49,19 @@ export class PayableService implements OnModuleInit {
 
     let payable: Payable;
     try {
-      this.payableRepository.dataSource.transaction(async (entityManager) => {
-        payable = await entityManager.save(payableBuilded);
+      await this.payableRepository.dataSource.transaction(
+        async (entityManager) => {
+          payable = await entityManager.save(payableBuilded);
 
-        this.client.emit('payable_created', payable);
-      });
+          this.client.emit('payable_created', {
+            customerId: createPayableDto.customerId,
+            status: payable.status,
+            amount: payable.amount,
+          });
+        },
+      );
 
-      return {
-        id: payable.id,
-        status: payable.status,
-        paymentDate: payable.paymentDate,
-        amount: payable.amount,
-      };
+      return payable;
     } catch (e) {
       throw new BadRequestException(e.message);
     }
@@ -96,17 +97,5 @@ export class PayableService implements OnModuleInit {
     } catch (e) {
       throw new BadRequestException(e.message);
     }
-  }
-
-  async findAll(): Promise<Payable[]> {
-    const payables = await this.payableRepository.find();
-    return payables.map((payable) => {
-      return {
-        id: payable.id,
-        status: payable.status,
-        paymentDate: payable.paymentDate,
-        amount: payable.amount,
-      };
-    });
   }
 }

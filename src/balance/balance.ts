@@ -1,4 +1,5 @@
 export class Balance {
-  readonly availableBalance: number;
-  readonly pendingBalance: number;
+  readonly customerId: number;
+  readonly paid: number;
+  readonly available: number;
 }
