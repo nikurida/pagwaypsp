@@ -3,9 +3,8 @@ import { BalanceModule } from './balance.module';
 import { setupGlobalPipes } from '../common/setupGlobalPipes';
 
 async function bootstrap() {
-  const app = await NestFactory.create(BalanceModule);
+  const app = await NestFactory.createMicroservice(BalanceModule);
   setupGlobalPipes(app);
-  await app.startAllMicroservices();
-  await app.listen(3002);
+  await app.listen();
 }
 bootstrap();

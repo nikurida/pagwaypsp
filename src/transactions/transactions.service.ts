@@ -1,16 +1,25 @@
 // transaction.service.ts
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  OnModuleInit,
+} from '@nestjs/common';
 import { CreateTransactionDto } from './dto/transactions.dto';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { Transaction } from './transaction';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
-export class TransactionService {
+export class TransactionService implements OnModuleInit {
   constructor(
     private transactionRepository: TransactionRepository,
     @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
   ) {}
+
+  onModuleInit() {
+    this.client.connect();
+  }
 
   async create(
     createTransactionDto: CreateTransactionDto,

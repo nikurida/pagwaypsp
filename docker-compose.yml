@@ -21,27 +21,39 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
 
   transactions:
-    build: ./src/transactions
-    ports:
-      - "3000:3003"
+    build: 
+      context: .
+      dockerfile: ./src/transactions/Dockerfile
     depends_on:
       - rabbitmq
       - postgres
 
   payable:
-    build: ./src/payable
-    ports:
-      - "3001:3001"
+    build: 
+      context: .
+      dockerfile: ./src/payable/Dockerfile
     depends_on:
       - rabbitmq
       - postgres
 
   balance-service:
-    build: ./src/balance
-    ports:
-      - "3002:3002"
+    build: 
+      context: .
+      dockerfile: ./src/balance/Dockerfile
     depends_on:
       - postgres
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./src/api-gateway/Dockerfile
+    ports:
+      - "4000:3000"
+    depends_on:
+      - rabbitmq
+      - transactions
+      - payable
+      - balance-service
 
 volumes:
   postgres-data:

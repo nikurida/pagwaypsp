@@ -1,11 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
 import { setupGlobalPipes } from '../common/setupGlobalPipes';
+import { PayableModule } from './payable.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.createMicroservice(PayableModule);
   setupGlobalPipes(app);
-  await app.startAllMicroservices();
-  await app.listen(3001);
+  await app.listen();
 }
 bootstrap();

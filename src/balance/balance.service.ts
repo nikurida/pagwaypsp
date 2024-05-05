@@ -1,7 +1,13 @@
 // balance.service.ts
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Balance } from './balance';
 import {
+  ClientProxy,
   Ctx,
   MessagePattern,
   Payload,
@@ -11,8 +17,15 @@ import { BalanceDto } from './dto/balance.dto';
 import { BalanceRepository } from './repositories/balance.repository';
 
 @Injectable()
-export class BalanceService {
-  constructor(private balanceRepository: BalanceRepository) {}
+export class BalanceService implements OnModuleInit {
+  constructor(
+    private balanceRepository: BalanceRepository,
+    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+  ) {}
+
+  onModuleInit() {
+    this.client.connect();
+  }
 
   @MessagePattern('payable_created')
   async handleTransactionCreated(
@@ -44,7 +57,9 @@ export class BalanceService {
 
     try {
       this.balanceRepository.dataSource.transaction(async (entityManager) => {
-        await entityManager.save(balanceBuilded);
+        const balance = await entityManager.save(balanceBuilded);
+
+        this.client.emit('balance_created_or_updated', balance);
       });
     } catch (e) {
       throw new BadRequestException(e.message);

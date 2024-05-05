@@ -5,6 +5,7 @@ import { BalanceModule } from './balance/balance.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { DatabaseModule } from './database/database.module';
+import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DatabaseModule } from './database/database.module';
     TransactionsModule,
     RabbitMQModule,
     DatabaseModule,
+    GatewayModule,
   ],
   controllers: [],
   providers: [],
