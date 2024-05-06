@@ -44,14 +44,18 @@ export class BalanceService {
   }
 
   private async getBalanceOrNull(customerId: number) {
-    return await this.balanceRepository.findOne({
-      where: {
-        customerId,
-      },
-      relations: {
-        customer: true,
-      },
-    });
+    try {
+      return await this.balanceRepository.findOne({
+        where: {
+          customerId,
+        },
+        relations: {
+          customer: true,
+        },
+      });
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 
   async findBalance(customerId: number): Promise<Balance> {

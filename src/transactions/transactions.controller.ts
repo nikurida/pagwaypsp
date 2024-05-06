@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { BadRequestException, Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TransactionService } from './transactions.service';
 import { TransactionDto } from './dto/transactions.dto';
@@ -10,12 +10,22 @@ export class TransactionController {
   @MessagePattern({ role: 'transaction', cmd: 'create' })
   async createTransaction(@Payload() data: TransactionDto) {
     console.log(`Received transaction data: ${data}`);
-    return this.transactionService.create(data);
+    try {
+      const response = await this.transactionService.create(data);
+      return response;
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 
   @MessagePattern({ role: 'transaction', cmd: 'get' })
   async getAllTransactions() {
     console.log(`Getting transaction data`);
-    return this.transactionService.findAll();
+    try {
+      const response = this.transactionService.findAll();
+      return response;
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 }

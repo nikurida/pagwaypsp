@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { BadRequestException, Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
 import { UsersDto } from './dto/users.dto';
@@ -11,6 +11,11 @@ export class UserController {
   async createUser(@Payload() data: UsersDto) {
     console.log(`Received user data: ${data}`);
 
-    return this.userService.create(data);
+    try {
+      const response = await this.userService.create(data);
+      return response;
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 }

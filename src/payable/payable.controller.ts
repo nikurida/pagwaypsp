@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { BadRequestException, Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PayableService } from './payable.service';
 import { PayableDto } from './dto/payable.dto';
@@ -10,7 +10,11 @@ export class PayableController {
   @MessagePattern({ role: 'payable', cmd: 'create' })
   async createPayable(@Payload() data: PayableDto) {
     console.log(`Received payable data: ${data}`);
-
-    return this.payableService.create(data);
+    try {
+      const response = await this.payableService.create(data);
+      return response;
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 }

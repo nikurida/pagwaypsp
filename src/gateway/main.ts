@@ -20,7 +20,7 @@ async function bootstrap() {
     .addApiKey({ name: 'X-API-KEY', type: 'apiKey' })
     .setVersion('1.0')
     .addTag('Transactions')
-    .addTag('Payables')
+    .addTag('Users')
     .addTag('Balance')
     .addApiKey({ type: 'apiKey', name: 'X-API-KEY' })
     .addBearerAuth({ type: 'http', scheme: 'Bearer', bearerFormat: 'JWT' })

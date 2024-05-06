@@ -8,36 +8,17 @@ import { UsersDto } from './dto/users.dto';
 import * as bcrypt from 'bcrypt';
 import { UsersRepository } from './repositories/user.repository';
 import { User } from './user';
-import {
-  ClientProxy,
-  Ctx,
-  MessagePattern,
-  Payload,
-  RmqContext,
-} from '@nestjs/microservices';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class UserService implements OnModuleInit {
   constructor(
     private userRepository: UsersRepository,
-    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+    @Inject('USERS_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   onModuleInit() {
     this.client.connect();
-  }
-
-  @MessagePattern('create_user')
-  async handleTransactionCreated(
-    @Payload() data: UsersDto,
-    @Ctx() context: RmqContext,
-  ) {
-    console.log(`Received user data: ${data}`);
-    this.create(data);
-
-    const channel = context.getChannelRef();
-    const originalMsg = context.getMessage();
-    channel.ack(originalMsg);
   }
 
   async create(userDto: UsersDto): Promise<User> {
@@ -74,7 +55,11 @@ export class UserService implements OnModuleInit {
   }
 
   private async getBcryptPassword(password: string) {
-    const salt = await bcrypt.genSalt();
-    return await bcrypt.hash(password, salt);
+    try {
+      const salt = await bcrypt.genSalt();
+      return await bcrypt.hash(password, salt);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 }

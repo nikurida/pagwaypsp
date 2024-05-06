@@ -16,7 +16,7 @@ export class PayableService implements OnModuleInit {
   constructor(
     private payableRepository: PayableRepository,
     private customerFeeRepository: CustomersFeeRepository,
-    @Inject('BALANCE_SERVICE') private readonly client: ClientProxy,
+    @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   onModuleInit() {

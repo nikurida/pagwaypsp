@@ -15,9 +15,9 @@ import { AuthModule } from 'src/auth/auth.module';
         },
       },
       {
-        name: 'PAYABLE_SERVICE',
+        name: 'USERS_SERVICE',
         transport: Transport.RMQ,
-        options: { urls: [process.env.RABBITMQ_URI], queue: 'payables_queue' },
+        options: { urls: [process.env.RABBITMQ_URI], queue: 'users_queue' },
       },
       {
         name: 'BALANCE_SERVICE',

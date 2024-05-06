@@ -14,7 +14,7 @@ import { ClientProxy } from '@nestjs/microservices';
 export class TransactionService implements OnModuleInit {
   constructor(
     private transactionRepository: TransactionRepository,
-    @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
+    @Inject('TRANSACTIONS_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   onModuleInit() {
@@ -57,16 +57,20 @@ export class TransactionService implements OnModuleInit {
   }
 
   async findAll(): Promise<Transaction[]> {
-    const transactions = await this.transactionRepository.find();
-    return transactions.map((transaction) => {
-      return {
-        id: transaction.id,
-        amount: transaction.amount,
-        customerId: transaction.customerId,
-        description: transaction.description,
-        cardLastFour: transaction.cardLastFour,
-        createdAt: transaction.createdAt,
-      };
-    });
+    try {
+      const transactions = await this.transactionRepository.find();
+      return transactions.map((transaction) => {
+        return {
+          id: transaction.id,
+          amount: transaction.amount,
+          customerId: transaction.customerId,
+          description: transaction.description,
+          cardLastFour: transaction.cardLastFour,
+          createdAt: transaction.createdAt,
+        };
+      });
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
   }
 }
