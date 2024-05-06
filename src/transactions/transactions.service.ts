@@ -5,7 +5,7 @@ import {
   Injectable,
   OnModuleInit,
 } from '@nestjs/common';
-import { CreateTransactionDto } from './dto/transactions.dto';
+import { TransactionDto } from './dto/transactions.dto';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { Transaction } from './transaction';
 import { ClientProxy } from '@nestjs/microservices';
@@ -14,17 +14,15 @@ import { ClientProxy } from '@nestjs/microservices';
 export class TransactionService implements OnModuleInit {
   constructor(
     private transactionRepository: TransactionRepository,
-    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+    @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   onModuleInit() {
     this.client.connect();
   }
 
-  async create(
-    createTransactionDto: CreateTransactionDto,
-  ): Promise<Transaction> {
-    const transactionBuilded = this.builTransaction(createTransactionDto);
+  async create(transactionDto: TransactionDto): Promise<Transaction> {
+    const transactionBuilded = this.builTransaction(transactionDto);
 
     let transaction: Transaction;
     try {
@@ -32,11 +30,14 @@ export class TransactionService implements OnModuleInit {
         async (entityManager) => {
           transaction = await entityManager.save(transactionBuilded);
 
-          this.client.emit('transaction_created', {
-            customerId: transaction.customerId,
-            transactionId: transaction.id,
-            amount: transaction.amount,
-          });
+          this.client.send(
+            { role: 'payable', cmd: 'create' },
+            {
+              customerId: transaction.customerId,
+              transactionId: transaction.id,
+              amount: transaction.amount,
+            },
+          );
         },
       );
 
@@ -46,7 +47,7 @@ export class TransactionService implements OnModuleInit {
     }
   }
 
-  private builTransaction(transaction: CreateTransactionDto) {
+  private builTransaction(transaction: TransactionDto) {
     const { cardNumber, ...rest } = transaction;
 
     return this.transactionRepository.create({

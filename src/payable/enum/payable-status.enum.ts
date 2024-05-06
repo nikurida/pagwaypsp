@@ -1,4 +1,4 @@
 export enum PayableStatus {
   Pending = 'pending',
-  Settled = 'settled',
+  Settled = 'paid',
 }

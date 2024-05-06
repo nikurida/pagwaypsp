@@ -3,13 +3,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({})
 export class RabbitMQModule {
-  static register(queueName: string): DynamicModule {
+  static register(queueName: string, serviceName: string): DynamicModule {
     return {
       module: RabbitMQModule,
       imports: [
         ClientsModule.register([
           {
-            name: 'RABBITMQ_SERVICE',
+            name: serviceName,
             transport: Transport.RMQ,
             options: {
               urls: [process.env.RABBITMQ_URI],

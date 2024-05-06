@@ -1,13 +1,22 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Param } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BalanceService } from './balance.service';
-import { Balance } from './balance';
+import { BalanceDto } from './dto/balance.dto';
 
-@Controller('balance')
+@Controller()
 export class BalanceController {
   constructor(private readonly balanceService: BalanceService) {}
 
-  @Get(':customerId')
-  async getBalance(@Param('customerId') customerId: number): Promise<Balance> {
+  @MessagePattern({ role: 'balance', cmd: 'create' })
+  async createBalance(@Payload() data: BalanceDto) {
+    console.log(`Received balance data: ${data}`);
+
+    return this.balanceService.create(data);
+  }
+
+  @MessagePattern({ role: 'transaction', cmd: 'get' })
+  async getCustomerBalance(@Param('customerId') customerId: number) {
+    console.log(`Getting balance data`);
     return this.balanceService.findBalance(customerId);
   }
 }

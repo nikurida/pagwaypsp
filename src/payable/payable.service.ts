@@ -5,16 +5,10 @@ import {
   Injectable,
   OnModuleInit,
 } from '@nestjs/common';
-import { CreatePayableDto } from './dto/payable.dto';
+import { PayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
 import { PayableRepository } from './repositories/payable-.repository';
-import {
-  ClientProxy,
-  Ctx,
-  MessagePattern,
-  Payload,
-  RmqContext,
-} from '@nestjs/microservices';
+import { ClientProxy } from '@nestjs/microservices';
 import { CustomersFeeRepository } from 'src/customers/repositories/customers_fee.repository';
 
 @Injectable()
@@ -22,30 +16,17 @@ export class PayableService implements OnModuleInit {
   constructor(
     private payableRepository: PayableRepository,
     private customerFeeRepository: CustomersFeeRepository,
-    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+    @Inject('BALANCE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   onModuleInit() {
     this.client.connect();
   }
 
-  @MessagePattern('transaction_created')
-  async handleTransactionCreated(
-    @Payload() data: CreatePayableDto,
-    @Ctx() context: RmqContext,
-  ) {
-    console.log(`Received transaction data: ${data}`);
-    this.create(data);
+  async create(payableDto: PayableDto): Promise<Payable> {
+    const fee = await this.getCustomerFeeOrThrow(payableDto.customerId);
 
-    const channel = context.getChannelRef();
-    const originalMsg = context.getMessage();
-    channel.ack(originalMsg);
-  }
-
-  async create(createPayableDto: CreatePayableDto): Promise<Payable> {
-    const fee = await this.getCustomerFeeOrThrow(createPayableDto.customerId);
-
-    const payableBuilded = await this.buildPayable(createPayableDto, fee);
+    const payableBuilded = await this.buildPayable(payableDto, fee);
 
     let payable: Payable;
     try {
@@ -53,11 +34,14 @@ export class PayableService implements OnModuleInit {
         async (entityManager) => {
           payable = await entityManager.save(payableBuilded);
 
-          this.client.emit('payable_created', {
-            customerId: createPayableDto.customerId,
-            status: payable.status,
-            amount: payable.amount,
-          });
+          this.client.send(
+            { role: 'balance', cmd: 'create' },
+            {
+              customerId: payableDto.customerId,
+              status: payable.status,
+              amount: payable.amount,
+            },
+          );
         },
       );
 
@@ -84,11 +68,11 @@ export class PayableService implements OnModuleInit {
     }
   }
 
-  private async buildPayable(createPayableDto: CreatePayableDto, fee: number) {
+  private async buildPayable(payableDto: PayableDto, fee: number) {
     try {
       const payable = await this.payableRepository.create({
-        ...createPayableDto,
-        amount: createPayableDto.amount - createPayableDto.amount * fee,
+        ...payableDto,
+        amount: payableDto.amount - payableDto.amount * fee,
         status: 'pending',
         paymentDate: new Date(new Date().setDate(new Date().getDate() + 30)),
       });

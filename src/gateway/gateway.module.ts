@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { GatewayController } from './gateway.controller';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { GatewayController } from './gateway.controller';
         options: { urls: [process.env.RABBITMQ_URI], queue: 'balance_queue' },
       },
     ]),
+    AuthModule,
   ],
   controllers: [GatewayController],
 })

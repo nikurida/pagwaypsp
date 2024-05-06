@@ -1,18 +1,21 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TransactionService } from './transactions.service';
-import { CreateTransactionDto } from './dto/transactions.dto';
+import { TransactionDto } from './dto/transactions.dto';
 
-@Controller('transactions')
-export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionService) {}
+@Controller()
+export class TransactionController {
+  constructor(private readonly transactionService: TransactionService) {}
 
-  @Post()
-  create(@Body() createTransactionDto: CreateTransactionDto) {
-    return this.transactionsService.create(createTransactionDto);
+  @MessagePattern({ role: 'transaction', cmd: 'create' })
+  async createTransaction(@Payload() data: TransactionDto) {
+    console.log(`Received transaction data: ${data}`);
+    return this.transactionService.create(data);
   }
 
-  @Get()
-  findAll() {
-    return this.transactionsService.findAll();
+  @MessagePattern({ role: 'transaction', cmd: 'get' })
+  async getAllTransactions() {
+    console.log(`Getting transaction data`);
+    return this.transactionService.findAll();
   }
 }

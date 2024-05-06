@@ -1,14 +1,16 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PayableService } from './payable.service';
-import { CreatePayableDto } from './dto/payable.dto';
-import { Payable } from './payable';
+import { PayableDto } from './dto/payable.dto';
 
-@Controller('payables')
+@Controller()
 export class PayableController {
   constructor(private readonly payableService: PayableService) {}
 
-  @Post()
-  async create(@Body() createPayableDto: CreatePayableDto): Promise<Payable> {
-    return this.payableService.create(createPayableDto);
+  @MessagePattern({ role: 'payable', cmd: 'create' })
+  async createPayable(@Payload() data: PayableDto) {
+    console.log(`Received payable data: ${data}`);
+
+    return this.payableService.create(data);
   }
 }
