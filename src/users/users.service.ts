@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  OnModuleInit,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { UsersDto } from './dto/users.dto';
 import * as bcrypt from 'bcrypt';
 import { UsersRepository } from './repositories/user.repository';
@@ -11,15 +6,11 @@ import { User } from './user';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
-export class UserService implements OnModuleInit {
+export class UserService {
   constructor(
     private userRepository: UsersRepository,
     @Inject('USERS_SERVICE') private readonly client: ClientProxy,
   ) {}
-
-  onModuleInit() {
-    this.client.connect();
-  }
 
   async create(userDto: UsersDto): Promise<User> {
     const { password } = userDto;
@@ -31,13 +22,15 @@ export class UserService implements OnModuleInit {
       password: hashedPassword,
     });
 
-    let user: User;
     try {
-      this.userRepository.dataSource.transaction(async (entityManager) => {
-        user = await entityManager.save(buildedUser);
+      const user = await this.userRepository.dataSource.transaction(
+        async (entityManager) => {
+          const savedUser = await entityManager.save(buildedUser);
+          return savedUser;
+        },
+      );
 
-        this.client.emit('user_created', user);
-      });
+      this.client.emit('user_created', user);
 
       return user;
     } catch (e) {

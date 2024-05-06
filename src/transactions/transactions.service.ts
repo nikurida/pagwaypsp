@@ -1,43 +1,37 @@
 // transaction.service.ts
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  OnModuleInit,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { TransactionDto } from './dto/transactions.dto';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { Transaction } from './transaction';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
-export class TransactionService implements OnModuleInit {
+export class TransactionService {
   constructor(
     private transactionRepository: TransactionRepository,
     @Inject('TRANSACTIONS_SERVICE') private readonly client: ClientProxy,
   ) {}
 
-  onModuleInit() {
-    this.client.connect();
-  }
-
   async create(transactionDto: TransactionDto): Promise<Transaction> {
     const transactionBuilded = this.builTransaction(transactionDto);
 
-    let transaction: Transaction;
     try {
-      await this.transactionRepository.dataSource.transaction(
-        async (entityManager) => {
-          transaction = await entityManager.save(transactionBuilded);
+      const transaction =
+        await this.transactionRepository.dataSource.transaction(
+          async (entityManager) => {
+            const savedTransaction =
+              await entityManager.save(transactionBuilded);
 
-          this.client.send(
-            { role: 'payable', cmd: 'create' },
-            {
-              customerId: transaction.customerId,
-              transactionId: transaction.id,
-              amount: transaction.amount,
-            },
-          );
+            return savedTransaction;
+          },
+        );
+
+      this.client.send(
+        { role: 'payable', cmd: 'create' },
+        {
+          customerId: transaction.customerId,
+          transactionId: transaction.id,
+          amount: transaction.amount,
         },
       );
 

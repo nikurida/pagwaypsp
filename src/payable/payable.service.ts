@@ -1,10 +1,5 @@
 // payable.service.ts
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  OnModuleInit,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { PayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
 import { PayableRepository } from './repositories/payable-.repository';
@@ -12,36 +7,33 @@ import { ClientProxy } from '@nestjs/microservices';
 import { CustomersFeeRepository } from 'src/customers/repositories/customers_fee.repository';
 
 @Injectable()
-export class PayableService implements OnModuleInit {
+export class PayableService {
   constructor(
     private payableRepository: PayableRepository,
     private customerFeeRepository: CustomersFeeRepository,
     @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
-  onModuleInit() {
-    this.client.connect();
-  }
-
   async create(payableDto: PayableDto): Promise<Payable> {
     const fee = await this.getCustomerFeeOrThrow(payableDto.customerId);
 
     const payableBuilded = await this.buildPayable(payableDto, fee);
 
-    let payable: Payable;
     try {
-      await this.payableRepository.dataSource.transaction(
+      const payable = await this.payableRepository.dataSource.transaction(
         async (entityManager) => {
-          payable = await entityManager.save(payableBuilded);
+          const savedPayable = await entityManager.save(payableBuilded);
 
-          this.client.send(
-            { role: 'balance', cmd: 'create' },
-            {
-              customerId: payableDto.customerId,
-              status: payable.status,
-              amount: payable.amount,
-            },
-          );
+          return savedPayable;
+        },
+      );
+
+      this.client.send(
+        { role: 'balance', cmd: 'create' },
+        {
+          customerId: payableDto.customerId,
+          status: payable.status,
+          amount: payable.amount,
         },
       );
 

@@ -24,11 +24,15 @@ export class BalanceService {
     }
 
     try {
-      this.balanceRepository.dataSource.transaction(async (entityManager) => {
-        const balance = await entityManager.save(balanceBuilded);
+      const balance = this.balanceRepository.dataSource.transaction(
+        async (entityManager) => {
+          const savedBalance = await entityManager.save(balanceBuilded);
 
-        return balance;
-      });
+          return savedBalance;
+        },
+      );
+
+      return balance;
     } catch (e) {
       throw new BadRequestException(e.message);
     }
