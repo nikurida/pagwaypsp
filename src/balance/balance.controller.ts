@@ -1,33 +1,35 @@
-import { BadRequestException, Controller, Param } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Logger, Param } from '@nestjs/common';
+import { EventPattern, Payload } from '@nestjs/microservices';
 import { BalanceService } from './balance.service';
 import { BalanceDto } from './dto/balance.dto';
 
 @Controller()
 export class BalanceController {
+  private readonly logger = new Logger(BalanceService.name);
+
   constructor(private readonly balanceService: BalanceService) {}
 
-  @MessagePattern({ role: 'balance', cmd: 'create' })
+  @EventPattern('create_balance')
   async createBalance(@Payload() data: BalanceDto) {
-    console.log(`Received balance data: ${data}`);
+    this.logger.log(`Received balance data: ${data}`);
 
     try {
       const response = this.balanceService.create(data);
       return response;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
-  @MessagePattern({ role: 'transaction', cmd: 'get' })
+  @EventPattern('get_customer_balance')
   async getCustomerBalance(@Param('customerId') customerId: number) {
-    console.log(`Getting balance data`);
+    this.logger.log(`Getting balance data`);
 
     try {
       const response = this.balanceService.findBalance(customerId);
       return response;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 }

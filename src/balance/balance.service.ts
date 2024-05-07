@@ -1,11 +1,13 @@
 // balance.service.ts
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Balance } from './balance';
 import { BalanceDto } from './dto/balance.dto';
 import { BalanceRepository } from './repositories/balance.repository';
 
 @Injectable()
 export class BalanceService {
+  private readonly logger = new Logger(BalanceService.name);
+
   constructor(private balanceRepository: BalanceRepository) {}
 
   async create(data: BalanceDto) {
@@ -34,7 +36,7 @@ export class BalanceService {
 
       return balance;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
@@ -43,7 +45,7 @@ export class BalanceService {
       const balance = this.balanceRepository.create(data);
       return balance;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
@@ -58,7 +60,7 @@ export class BalanceService {
         },
       });
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 

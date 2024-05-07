@@ -1,13 +1,4 @@
-import {
-  IsNotEmpty,
-  IsString,
-  Length,
-  IsNumber,
-  Min,
-  IsDate,
-  IsCreditCard,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNotEmpty, IsString, Length, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TransactionDto {
@@ -29,7 +20,7 @@ export class TransactionDto {
   })
   readonly description: string;
 
-  @IsCreditCard()
+  @IsString()
   @ApiProperty({
     example: '4111111111111111',
     description: 'Credit card number',
@@ -41,14 +32,15 @@ export class TransactionDto {
   @ApiProperty({ example: 'John Doe', description: 'Cardholder name' })
   readonly cardholderName: string;
 
-  @IsDate()
-  @Type(() => Date)
+  // @IsDate()
+  // @Type(() => Date)
+  @IsString()
   @ApiProperty({
     example: '10/26',
     description: 'Card expiration date',
     type: 'string',
   })
-  readonly cardExpirationDate: Date;
+  readonly cardExpirationDate: string;
 
   @IsNotEmpty()
   @IsString()

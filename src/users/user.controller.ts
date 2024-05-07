@@ -1,21 +1,23 @@
-import { BadRequestException, Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Logger } from '@nestjs/common';
+import { EventPattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
 import { UsersDto } from './dto/users.dto';
 
 @Controller()
 export class UserController {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(private readonly userService: UserService) {}
 
-  @MessagePattern({ role: 'user', cmd: 'create' })
+  @EventPattern('create_user')
   async createUser(@Payload() data: UsersDto) {
-    console.log(`Received user data: ${data}`);
+    this.logger.log(`Received user data: ${data}`);
 
     try {
       const response = await this.userService.create(data);
       return response;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 }

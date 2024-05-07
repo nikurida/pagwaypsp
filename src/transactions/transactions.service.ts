@@ -1,5 +1,5 @@
 // transaction.service.ts
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { TransactionDto } from './dto/transactions.dto';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { Transaction } from './transaction';
@@ -7,9 +7,11 @@ import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class TransactionService {
+  private readonly logger = new Logger(TransactionService.name);
+
   constructor(
     private transactionRepository: TransactionRepository,
-    @Inject('TRANSACTIONS_SERVICE') private readonly client: ClientProxy,
+    @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async create(transactionDto: TransactionDto): Promise<Transaction> {
@@ -26,18 +28,15 @@ export class TransactionService {
           },
         );
 
-      this.client.send(
-        { role: 'payable', cmd: 'create' },
-        {
-          customerId: transaction.customerId,
-          transactionId: transaction.id,
-          amount: transaction.amount,
-        },
-      );
+      this.client.emit('create_payable', {
+        customerId: transaction.customerId,
+        transactionId: transaction.id,
+        amount: transaction.amount,
+      });
 
       return transaction;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
@@ -64,7 +63,7 @@ export class TransactionService {
         };
       });
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 }

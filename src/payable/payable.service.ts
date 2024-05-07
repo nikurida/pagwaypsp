@@ -1,5 +1,10 @@
 // payable.service.ts
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { PayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
 import { PayableRepository } from './repositories/payable-.repository';
@@ -8,10 +13,12 @@ import { CustomersFeeRepository } from 'src/customers/repositories/customers_fee
 
 @Injectable()
 export class PayableService {
+  private readonly logger = new Logger(PayableService.name);
+
   constructor(
     private payableRepository: PayableRepository,
     private customerFeeRepository: CustomersFeeRepository,
-    @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
+    @Inject('BALANCE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async create(payableDto: PayableDto): Promise<Payable> {
@@ -28,18 +35,15 @@ export class PayableService {
         },
       );
 
-      this.client.send(
-        { role: 'balance', cmd: 'create' },
-        {
-          customerId: payableDto.customerId,
-          status: payable.status,
-          amount: payable.amount,
-        },
-      );
+      this.client.emit('create_balance', {
+        customerId: payableDto.customerId,
+        status: payable.status,
+        amount: payable.amount,
+      });
 
       return payable;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
@@ -71,7 +75,7 @@ export class PayableService {
 
       return payable;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 }

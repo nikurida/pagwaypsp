@@ -1,16 +1,14 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UsersDto } from './dto/users.dto';
 import * as bcrypt from 'bcrypt';
 import { UsersRepository } from './repositories/user.repository';
 import { User } from './user';
-import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private userRepository: UsersRepository,
-    @Inject('USERS_SERVICE') private readonly client: ClientProxy,
-  ) {}
+  private readonly logger = new Logger(UserService.name);
+
+  constructor(private userRepository: UsersRepository) {}
 
   async create(userDto: UsersDto): Promise<User> {
     const { password } = userDto;
@@ -30,11 +28,9 @@ export class UserService {
         },
       );
 
-      this.client.emit('user_created', user);
-
       return user;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
@@ -43,7 +39,7 @@ export class UserService {
       const buildedUser = await this.userRepository.create(user);
       return buildedUser;
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 
@@ -52,7 +48,7 @@ export class UserService {
       const salt = await bcrypt.genSalt();
       return await bcrypt.hash(password, salt);
     } catch (e) {
-      throw new BadRequestException(e.message);
+      this.logger.error(e);
     }
   }
 }

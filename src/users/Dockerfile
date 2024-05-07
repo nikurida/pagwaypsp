@@ -16,4 +16,4 @@ RUN chmod +x /usr/src/app/wait-for-it.sh
 
 RUN npm run build
 
-CMD ["./wait-for-it.sh", "postgres:5432", "--", "node", "dist/users/main.js"]
+CMD ["./wait-for-it.sh", "rabbitmq:5672", "--", "node", "dist/users/main.js"]
