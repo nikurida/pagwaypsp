@@ -32,10 +32,17 @@ export class BalanceController {
 
     try {
       const result = this.balanceService.findBalance(customerId);
+      if (result) {
+        return {
+          status: 'success',
+          message: '',
+          data: result,
+        };
+      }
+
       return {
-        status: 'success',
-        message: '',
-        data: result,
+        status: 404,
+        message: 'Can not found balance for this Customer',
       };
     } catch (e) {
       this.logger.error(e);
