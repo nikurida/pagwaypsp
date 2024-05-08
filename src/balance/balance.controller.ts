@@ -1,5 +1,5 @@
-import { Controller, Logger, Param } from '@nestjs/common';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BalanceService } from './balance.service';
 import { BalanceDto } from './dto/balance.dto';
 
@@ -26,12 +26,12 @@ export class BalanceController {
     }
   }
 
-  @EventPattern('get_customer_balance')
-  async getCustomerBalance(@Param('customerId') customerId: number) {
+  @MessagePattern('get_customer_balance')
+  async getCustomerBalance(@Payload() customerId: number) {
     this.logger.log(`Getting balance data`);
 
     try {
-      const result = this.balanceService.findBalance(customerId);
+      const result = await this.balanceService.findBalance(customerId);
       if (result) {
         return {
           status: 'success',
