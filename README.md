@@ -38,7 +38,7 @@ $ docker compose up --build
 
 - RabbitMQ: <http://localhost:15672>
 - Postgres: <http://localhost:5432>
-- Swagger: <http://localhost:4000/api>
+- Swagger: <http://localhost:3000/api>
 - Grafana: <http://localhost:3030>
 - Portainer: <http://localhost:9000>
 - Prometheus: <http://localhost:9090>

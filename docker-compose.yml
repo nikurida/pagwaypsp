@@ -71,7 +71,7 @@ services:
       context: .
       dockerfile: ./src/gateway/Dockerfile
     ports:
-      - "4000:3000"
+      - "3000:3000"
     depends_on:
       - rabbitmq
       - postgres
