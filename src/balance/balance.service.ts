@@ -59,7 +59,6 @@ export class BalanceService {
 
   async findBalance(customerId: number): Promise<BalanceEntity | null> {
     try {
-      console.log(customerId);
       const balance = await this.balanceRepository.findOne({
         where: {
           customerId,

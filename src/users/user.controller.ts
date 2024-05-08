@@ -1,4 +1,4 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
 import { UsersDto } from './dto/users.dto';
@@ -15,14 +15,15 @@ export class UserController {
 
     try {
       const result = await this.userService.create(data);
-      return {
-        status: 'success',
-        message: 'User created',
-        data: result,
-      };
+
+      if (result) {
+        return result;
+      }
+
+      throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
     } catch (e) {
       this.logger.error(e);
-      return { status: 'error', message: 'Fail to create user' };
+      throw new HttpException('Internal error', HttpStatus.BAD_REQUEST);
     }
   }
 }

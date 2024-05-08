@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Logger } from '@nestjs/common';
+import { Controller, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PayableService } from './payable.service';
 import { PayableDto } from './dto/payable.dto';
@@ -16,17 +16,13 @@ export class PayableController {
       const result = await this.payableService.create(data);
 
       if (result) {
-        return {
-          status: 'success',
-          message: 'Payable created',
-          data: result,
-        };
+        return result;
       }
 
-      throw new BadRequestException();
+      throw new HttpException('Fail to create Payable', HttpStatus.BAD_REQUEST);
     } catch (e) {
       this.logger.error(e);
-      return { status: 'error', message: 'Fail to create Payable' };
+      throw new HttpException('Internal error', HttpStatus.BAD_REQUEST);
     }
   }
 }

@@ -5,7 +5,9 @@ import {
   Get,
   Param,
   Inject,
-  BadRequestException,
+  Res,
+  HttpStatus,
+  HttpException,
   //UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -15,6 +17,7 @@ import { TransactionDto } from '../transactions/dto/transactions.dto';
 import { UsersDto } from 'src/users/dto/users.dto';
 import { Logger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
+import { Response } from 'express';
 
 @Controller()
 export class GatewayController {
@@ -32,26 +35,23 @@ export class GatewayController {
   @ApiBody({ type: TransactionDto })
   async createTransaction(
     @Body() transactionDto: TransactionDto,
+    @Res() res: Response,
   ): Promise<any> {
     this.logger.log(`Creating transaction: ${JSON.stringify(transactionDto)}`);
 
     try {
-      const { status, message, data } = await firstValueFrom(
-        this.transactionsClient.send<{
-          status: string;
-          message: string;
-          data: any;
-        }>('create_transaction', transactionDto),
+      const result = await firstValueFrom(
+        this.transactionsClient.send('create_transaction', transactionDto),
       );
 
-      if (status === 'success') {
-        return { status: 201, message, data };
-      } else {
-        throw new BadRequestException(message);
+      if (result) {
+        res.status(HttpStatus.CREATED).json(result);
       }
+
+      throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
     } catch (e) {
       this.logger.error(e);
-      throw new BadRequestException('Failed to create transaction');
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 
@@ -61,25 +61,22 @@ export class GatewayController {
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiBody({ type: UsersDto })
   //@UseGuards(AuthGuard('jwt'))
-  async createUser(@Body() userDto: UsersDto) {
+  async createUser(@Body() userDto: UsersDto, @Res() res: Response) {
     this.logger.log(`Creating User: ${JSON.stringify(UsersDto)}`);
 
     try {
-      const { status, message, data } = await firstValueFrom(
-        this.usersClient.send<{ status: string; message: string; data: any }>(
-          'create_user',
-          userDto,
-        ),
+      const result = await firstValueFrom(
+        this.usersClient.send('create_user', userDto),
       );
 
-      if (status === 'success') {
-        return { status: 201, message, data };
-      } else {
-        throw new BadRequestException(message);
+      if (result) {
+        res.status(HttpStatus.CREATED).json(result);
       }
+
+      throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
     } catch (e) {
       this.logger.error(e);
-      throw new BadRequestException('Failed to create User');
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 
@@ -87,26 +84,25 @@ export class GatewayController {
   @ApiTags('Transactions')
   @ApiOperation({ summary: 'Get all transactions' })
   @ApiResponse({ status: 200, description: 'List of transactions' })
-  async getAllTransactions() {
+  async getAllTransactions(@Res() res: Response) {
     this.logger.log(`Getting Transactions...`);
 
     try {
-      const { status, message, data } = await firstValueFrom(
-        this.transactionsClient.send<{
-          status: string;
-          message: string;
-          data: any;
-        }>('get_all_transaction', {}),
+      const result = await firstValueFrom(
+        this.transactionsClient.send('get_all_transaction', {}),
       );
 
-      if (status === 'success') {
-        return { status: 201, message, data };
-      } else {
-        throw new BadRequestException(message);
+      if (result) {
+        res.status(HttpStatus.OK).json(result);
       }
+
+      throw new HttpException(
+        'Fail to get transactions',
+        HttpStatus.BAD_REQUEST,
+      );
     } catch (e) {
       this.logger.error(e);
-      throw new BadRequestException('Failed to create User');
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 
@@ -115,24 +111,27 @@ export class GatewayController {
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
   //@UseGuards(AuthGuard('jwt'))
-  async getCustomerBalance(@Param('customerId') customerId: number) {
+  async getCustomerBalance(
+    @Param('customerId') customerId: number,
+    @Res() res: Response,
+  ) {
     this.logger.log(`Getting Customer Balance...`);
     try {
-      const { status, message, data } = await firstValueFrom(
-        this.balanceClient.send<{ status: string; message: string; data: any }>(
-          'get_customer_balance',
-          customerId,
-        ),
+      const result = await firstValueFrom(
+        this.balanceClient.send('get_customer_balance', customerId),
       );
 
-      if (status === 'success') {
-        return { status: 201, message, data };
-      } else {
-        throw new BadRequestException(message);
+      if (result) {
+        res.status(HttpStatus.OK).json(result);
       }
+
+      throw new HttpException(
+        'Customer Balance not found',
+        HttpStatus.NOT_FOUND,
+      );
     } catch (e) {
       this.logger.error(e);
-      throw new BadRequestException('Failed to get Customer Balance');
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 }

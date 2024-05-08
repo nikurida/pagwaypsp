@@ -35,23 +35,19 @@ export class TransactionService {
         },
       );
 
-      const { status, message } = await firstValueFrom(
-        this.client.send<{ status: string; message: string; data: any }>(
-          'create_payable',
-          {
-            customerId: data.customerId,
-            transactionId: data.id,
-            amount: data.amount,
-          },
-        ),
+      const result = await firstValueFrom(
+        this.client.send('create_payable', {
+          customerId: data.customerId,
+          transactionId: data.id,
+          amount: data.amount,
+        }),
       );
 
-      if (status === 'success') {
+      if (result) {
         return data;
-      } else {
-        this.logger.error(message);
-        return false;
       }
+
+      return false;
     } catch (e) {
       this.logger.error(e);
     }

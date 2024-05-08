@@ -1,4 +1,4 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BalanceService } from './balance.service';
 import { BalanceDto } from './dto/balance.dto';
@@ -10,43 +10,39 @@ export class BalanceController {
   constructor(private readonly balanceService: BalanceService) {}
 
   @MessagePattern('create_balance')
-  async createBalance(@Payload() data: BalanceDto) {
+  async handleCreateBalance(@Payload() data: BalanceDto) {
     this.logger.log(`Received balance data: ${data}`);
 
     try {
-      const result = this.balanceService.create(data);
-      return {
-        status: 'success',
-        message: 'Balance created',
-        data: result,
-      };
+      const result = await this.balanceService.create(data);
+      if (result) {
+        return result;
+      }
+
+      throw new HttpException('Fail to create balance', HttpStatus.BAD_REQUEST);
     } catch (e) {
       this.logger.error(e);
-      return { status: 'error', message: 'Fail to create balance' };
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 
   @MessagePattern('get_customer_balance')
-  async getCustomerBalance(@Payload() customerId: number) {
+  async handleGetCustomerBalance(@Payload() customerId: number) {
     this.logger.log(`Getting balance data`);
 
     try {
       const result = await this.balanceService.findBalance(customerId);
       if (result) {
-        return {
-          status: 'success',
-          message: '',
-          data: result,
-        };
+        return result;
       }
 
-      return {
-        status: 404,
-        message: 'Can not found balance for this Customer',
-      };
+      throw new HttpException(
+        'Customer Balance not found',
+        HttpStatus.NOT_FOUND,
+      );
     } catch (e) {
       this.logger.error(e);
-      return { status: 'error', message: 'Fail to get balance' };
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 }

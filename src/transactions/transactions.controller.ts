@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Logger } from '@nestjs/common';
+import { Controller, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TransactionService } from './transactions.service';
 import { TransactionDto } from './dto/transactions.dto';
@@ -15,16 +15,16 @@ export class TransactionController {
     try {
       const result = await this.transactionService.create(data);
       if (result) {
-        return {
-          status: 'success',
-          message: 'Transaction created',
-          data: result,
-        };
+        return result;
       }
-      throw new BadRequestException();
+
+      throw new HttpException(
+        'Fail to create transactions',
+        HttpStatus.BAD_REQUEST,
+      );
     } catch (error) {
       this.logger.error(`Error creating transaction: ${error}`);
-      return { status: 'error', message: 'Failed to create transaction' };
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 
@@ -34,14 +34,17 @@ export class TransactionController {
     try {
       const result = await this.transactionService.findAll();
 
-      return {
-        status: 'success',
-        message: '',
-        data: result,
-      };
+      if (result) {
+        return result;
+      }
+
+      throw new HttpException(
+        'Fail to get transactions',
+        HttpStatus.BAD_REQUEST,
+      );
     } catch (e) {
       this.logger.error(e);
-      return { status: 'error', message: 'Failed to get transaction' };
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
   }
 }

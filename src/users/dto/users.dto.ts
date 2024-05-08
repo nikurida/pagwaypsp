@@ -5,7 +5,7 @@ export class UsersDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({ example: 'Jhon', description: 'First Name' })
-  firt_name: string;
+  first_name: string;
 
   @IsNotEmpty()
   @IsString()
