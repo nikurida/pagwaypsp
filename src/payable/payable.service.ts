@@ -1,47 +1,62 @@
 // payable.service.ts
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PayableDto } from './dto/payable.dto';
 import { Payable } from './payable';
-import { PayableRepository } from './repositories/payable-.repository';
+import { Payable as PayableEntity } from './entities/payable.entity';
 import { ClientProxy } from '@nestjs/microservices';
-import { CustomersFeeRepository } from 'src/customers/repositories/customers_fee.repository';
+import { EntityManager, Repository } from 'typeorm';
+import { CustomersFee as CustomersFeeEntity } from 'src/customers/entitites/customers_fee.entity';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PayableService {
   private readonly logger = new Logger(PayableService.name);
 
   constructor(
-    private payableRepository: PayableRepository,
-    private customerFeeRepository: CustomersFeeRepository,
+    @InjectRepository(PayableEntity)
+    private payableRepository: Repository<PayableEntity>,
+    @InjectRepository(CustomersFeeEntity)
+    private customerFeeRepository: Repository<CustomersFeeEntity>,
+    @InjectEntityManager()
+    private entityManager: EntityManager,
     @Inject('BALANCE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
-  async create(payableDto: PayableDto): Promise<Payable> {
+  async create(payableDto: PayableDto): Promise<Payable | boolean> {
     const fee = await this.getCustomerFeeOrThrow(payableDto.customerId);
 
     const payableBuilded = await this.buildPayable(payableDto, fee);
 
     try {
-      const payable = await this.payableRepository.dataSource.transaction(
+      const data = await this.entityManager.transaction(
         async (entityManager) => {
-          const savedPayable = await entityManager.save(payableBuilded);
+          const savedPayable = await entityManager.save(
+            PayableEntity,
+            payableBuilded,
+          );
 
           return savedPayable;
         },
       );
 
-      this.client.emit('create_balance', {
-        customerId: payableDto.customerId,
-        status: payable.status,
-        amount: payable.amount,
-      });
+      const { status, message } = await firstValueFrom(
+        this.client.send<{ status: string; message: string; data: any }>(
+          'create_balance',
+          {
+            customerId: data.customerId,
+            status: data.status,
+            amount: data.amount,
+          },
+        ),
+      );
 
-      return payable;
+      if (status === 'success') {
+        return data;
+      } else {
+        this.logger.error(message);
+        return false;
+      }
     } catch (e) {
       this.logger.error(e);
     }
@@ -60,7 +75,7 @@ export class PayableService {
 
       return customer.fee;
     } catch (e) {
-      throw new BadRequestException('Customer not found');
+      this.logger.error(e);
     }
   }
 

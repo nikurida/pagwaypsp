@@ -1,81 +1,82 @@
 // balance.service.ts
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Balance } from './balance';
+import { Injectable, Logger } from '@nestjs/common';
 import { BalanceDto } from './dto/balance.dto';
-import { BalanceRepository } from './repositories/balance.repository';
+import { Balance as BalanceEntity } from './entities/balance.entity';
+import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class BalanceService {
   private readonly logger = new Logger(BalanceService.name);
 
-  constructor(private balanceRepository: BalanceRepository) {}
+  constructor(
+    @InjectRepository(BalanceEntity)
+    private balanceRepository: Repository<BalanceEntity>,
+    @InjectEntityManager()
+    private entityManager: EntityManager,
+  ) {}
 
   async create(data: BalanceDto) {
-    let balanceBuilded = await this.getBalanceOrNull(data.customerId);
-
-    if (balanceBuilded) {
-      if (data.status === 'pending') {
-        balanceBuilded.available = balanceBuilded.available + data.amount;
-      }
-
-      if (data.status === 'paid') {
-        balanceBuilded.paid = balanceBuilded.paid + data.amount;
-      }
-    } else {
-      balanceBuilded = this.buildBalance(data);
-    }
-
     try {
-      const balance = this.balanceRepository.dataSource.transaction(
-        async (entityManager) => {
-          const savedBalance = await entityManager.save(balanceBuilded);
+      const updatedBalance = await this.entityManager.transaction(
+        async (transactionManager) => {
+          let balance = await transactionManager.findOne(BalanceEntity, {
+            where: { customerId: data.customerId },
+          });
 
-          return savedBalance;
+          if (balance) {
+            if (data.status === 'pending') {
+              balance.available = +balance.available + +data.amount;
+            } else if (data.status === 'paid') {
+              balance.paid = +balance.paid + +data.amount;
+            }
+          } else {
+            balance = this.buildBalance(data);
+          }
+
+          return transactionManager.save(BalanceEntity, balance);
         },
       );
 
-      return balance;
+      return updatedBalance;
     } catch (e) {
-      this.logger.error(e);
+      this.logger.error(
+        `Error updating/inserting balance: ${e.message}`,
+        e.stack,
+      );
     }
   }
 
   private buildBalance(data: BalanceDto) {
+    const balance: BalanceEntity = this.balanceRepository.create({
+      customerId: data.customerId,
+      available: data.status === 'pending' ? data.amount : 0,
+      paid: data.status === 'paid' ? data.amount : 0,
+    });
+
+    return balance;
+  }
+
+  async findBalance(customerId: number): Promise<BalanceEntity | null> {
     try {
-      const balance = this.balanceRepository.create(data);
+      const balance = await this.balanceRepository.findOne({
+        where: {
+          customer: {
+            id: customerId,
+          },
+        },
+        relations: {
+          customer: true,
+        },
+      });
+
       return balance;
     } catch (e) {
-      this.logger.error(e);
-    }
-  }
-
-  private async getBalanceOrNull(customerId: number) {
-    try {
-      return await this.balanceRepository.findOne({
-        where: {
-          customerId,
-        },
-        relations: {
-          customer: true,
-        },
-      });
-    } catch (e) {
-      this.logger.error(e);
-    }
-  }
-
-  async findBalance(customerId: number): Promise<Balance> {
-    try {
-      return this.balanceRepository.findOne({
-        where: {
-          customerId,
-        },
-        relations: {
-          customer: true,
-        },
-      });
-    } catch (e) {
-      throw new BadRequestException('Balance not found');
+      this.logger.error(
+        `Error finding balance for customer ${customerId}: ${e.message}`,
+        e.stack,
+      );
+      return null;
     }
   }
 }

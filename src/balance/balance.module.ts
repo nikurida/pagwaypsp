@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { BalanceService } from './balance.service';
 import { DatabaseModule } from 'src/database/database.module';
-import { BalanceRepository } from './repositories/balance.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomLoggerModule } from 'src/logger/logger.module';
+import { BalanceController } from './balance.controller';
+import { Balance } from './entities/balance.entity';
 
 @Module({
   imports: [
     CustomLoggerModule,
-    TypeOrmModule.forFeature([BalanceRepository]),
+    TypeOrmModule.forFeature([Balance]),
     DatabaseModule,
   ],
   providers: [BalanceService],
-  controllers: [],
+  controllers: [BalanceController],
 })
 export class BalanceModule {}

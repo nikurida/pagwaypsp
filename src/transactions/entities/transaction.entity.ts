@@ -4,19 +4,19 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  OneToOne,
   JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 
 @Entity()
-export class Transaction {
+export class Transactions {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   customerId: number;
 
-  @OneToOne(() => Customers)
+  @ManyToOne(() => Customers, (customer) => customer.transactions)
   @JoinColumn({ name: 'customerId' })
   customer: Customers;
 
@@ -32,6 +32,6 @@ export class Transaction {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
 }

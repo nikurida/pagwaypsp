@@ -1,5 +1,5 @@
 import { Customers } from 'src/customers/entitites/customers.entity';
-import { Transaction } from 'src/transactions/entities/transaction.entity';
+import { Transactions } from 'src/transactions/entities/transaction.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   OneToOne,
   JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 
 @Entity()
@@ -20,18 +21,18 @@ export class Payable {
   @Column()
   customerId: number;
 
-  @OneToOne(() => Transaction)
+  @OneToOne(() => Transactions)
   @JoinColumn({ name: 'transactionId' })
-  transaction: Transaction;
+  transaction: Transactions;
 
-  @OneToOne(() => Customers)
+  @ManyToOne(() => Customers, (customer) => customer.payable)
   @JoinColumn({ name: 'customerId' })
   customer: Customers;
 
   @Column()
   status: string;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
 
   @CreateDateColumn()

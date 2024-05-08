@@ -1,5 +1,5 @@
-import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { BadRequestException, Controller, Logger } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PayableService } from './payable.service';
 import { PayableDto } from './dto/payable.dto';
 
@@ -9,14 +9,24 @@ export class PayableController {
 
   constructor(private readonly payableService: PayableService) {}
 
-  @EventPattern('create_payable')
-  async createPayable(@Payload() data: PayableDto) {
+  @MessagePattern('create_payable')
+  async handleCreatePayable(@Payload() data: PayableDto) {
     this.logger.log(`Received payable data: ${data}`);
     try {
-      const response = await this.payableService.create(data);
-      return response;
+      const result = await this.payableService.create(data);
+
+      if (result) {
+        return {
+          status: 'success',
+          message: 'Payable created',
+          data: result,
+        };
+      }
+
+      throw new BadRequestException();
     } catch (e) {
       this.logger.error(e);
+      return { status: 'error', message: 'Fail to create Payable' };
     }
   }
 }

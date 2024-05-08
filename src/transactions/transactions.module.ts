@@ -1,16 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TransactionService } from './transactions.service';
 import { DatabaseModule } from 'src/database/database.module';
-import { TransactionRepository } from './repositories/transaction.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomLoggerModule } from 'src/logger/logger.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TransactionController } from './transactions.controller';
+import { Transactions } from './entities/transaction.entity';
 
 @Module({
   imports: [
     CustomLoggerModule,
-    TypeOrmModule.forFeature([TransactionRepository]),
     DatabaseModule,
+    TypeOrmModule.forFeature([Transactions]),
     ClientsModule.register([
       {
         name: 'PAYABLE_SERVICE',
@@ -25,7 +26,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
   ],
-  controllers: [],
+  controllers: [TransactionController],
   providers: [TransactionService],
 })
 export class TransactionsModule {}

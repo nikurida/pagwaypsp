@@ -36,6 +36,11 @@ imports.push(
             full_message: `${req?.url} - ${res?.statusCode}`,
           };
         },
+        // prettyPrint: {
+        //   colorize: true,
+        //   translateTime: true,
+        //   ignore: 'pid,hostname',
+        // },
       },
     }),
     inject: [],

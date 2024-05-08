@@ -1,40 +1,57 @@
 // transaction.service.ts
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { TransactionDto } from './dto/transactions.dto';
-import { TransactionRepository } from './repositories/transaction.repository';
 import { Transaction } from './transaction';
+import { Transactions as TransactionEntity } from './entities/transaction.entity';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { EntityManager, Repository } from 'typeorm';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name);
 
   constructor(
-    private transactionRepository: TransactionRepository,
+    @InjectRepository(TransactionEntity)
+    private transactionRepository: Repository<TransactionEntity>,
+    @InjectEntityManager()
+    private entityManager: EntityManager,
     @Inject('PAYABLE_SERVICE') private readonly client: ClientProxy,
   ) {}
 
-  async create(transactionDto: TransactionDto): Promise<Transaction> {
+  async create(transactionDto: TransactionDto): Promise<Transaction | boolean> {
     const transactionBuilded = this.builTransaction(transactionDto);
 
     try {
-      const transaction =
-        await this.transactionRepository.dataSource.transaction(
-          async (entityManager) => {
-            const savedTransaction =
-              await entityManager.save(transactionBuilded);
+      const data = await this.entityManager.transaction(
+        async (entityManager) => {
+          const savedTransaction = await entityManager.save(
+            TransactionEntity,
+            transactionBuilded,
+          );
 
-            return savedTransaction;
+          return savedTransaction;
+        },
+      );
+
+      const { status, message } = await firstValueFrom(
+        this.client.send<{ status: string; message: string; data: any }>(
+          'create_payable',
+          {
+            customerId: data.customerId,
+            transactionId: data.id,
+            amount: data.amount,
           },
-        );
+        ),
+      );
 
-      this.client.emit('create_payable', {
-        customerId: transaction.customerId,
-        transactionId: transaction.id,
-        amount: transaction.amount,
-      });
-
-      return transaction;
+      if (status === 'success') {
+        return data;
+      } else {
+        this.logger.error(message);
+        return false;
+      }
     } catch (e) {
       this.logger.error(e);
     }

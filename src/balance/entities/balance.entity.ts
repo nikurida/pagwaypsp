@@ -19,9 +19,9 @@ export class Balance {
   @JoinColumn({ name: 'customerId' })
   customer: Customers;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   paid: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   available: number;
 }

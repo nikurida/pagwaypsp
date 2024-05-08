@@ -1,5 +1,5 @@
 import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
 import { UsersDto } from './dto/users.dto';
 
@@ -9,15 +9,20 @@ export class UserController {
 
   constructor(private readonly userService: UserService) {}
 
-  @EventPattern('create_user')
+  @MessagePattern('create_user')
   async createUser(@Payload() data: UsersDto) {
     this.logger.log(`Received user data: ${data}`);
 
     try {
-      const response = await this.userService.create(data);
-      return response;
+      const result = await this.userService.create(data);
+      return {
+        status: 'success',
+        message: 'User created',
+        data: result,
+      };
     } catch (e) {
       this.logger.error(e);
+      return { status: 'error', message: 'Fail to create user' };
     }
   }
 }

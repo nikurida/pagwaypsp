@@ -19,6 +19,6 @@ export class CustomersFee {
   @JoinColumn({ name: 'customerId' })
   customer: Customers;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   fee: number;
 }

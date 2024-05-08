@@ -12,7 +12,6 @@ async function bootstrap() {
       options: {
         urls: ['amqp://user:password@rabbitmq:5672'],
         queue: 'transaction_queue',
-        // noAck: true,
         queueOptions: {
           durable: true,
         },

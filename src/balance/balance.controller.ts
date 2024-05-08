@@ -1,5 +1,5 @@
 import { Controller, Logger, Param } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { BalanceService } from './balance.service';
 import { BalanceDto } from './dto/balance.dto';
 
@@ -9,15 +9,20 @@ export class BalanceController {
 
   constructor(private readonly balanceService: BalanceService) {}
 
-  @EventPattern('create_balance')
+  @MessagePattern('create_balance')
   async createBalance(@Payload() data: BalanceDto) {
     this.logger.log(`Received balance data: ${data}`);
 
     try {
-      const response = this.balanceService.create(data);
-      return response;
+      const result = this.balanceService.create(data);
+      return {
+        status: 'success',
+        message: 'Balance created',
+        data: result,
+      };
     } catch (e) {
       this.logger.error(e);
+      return { status: 'error', message: 'Fail to create balance' };
     }
   }
 
@@ -26,10 +31,15 @@ export class BalanceController {
     this.logger.log(`Getting balance data`);
 
     try {
-      const response = this.balanceService.findBalance(customerId);
-      return response;
+      const result = this.balanceService.findBalance(customerId);
+      return {
+        status: 'success',
+        message: '',
+        data: result,
+      };
     } catch (e) {
       this.logger.error(e);
+      return { status: 'error', message: 'Fail to get balance' };
     }
   }
 }

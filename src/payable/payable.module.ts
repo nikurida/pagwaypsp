@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { PayableService } from './payable.service';
 import { DatabaseModule } from 'src/database/database.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PayableRepository } from './repositories/payable-.repository';
-import { CustomersFeeRepository } from 'src/customers/repositories/customers_fee.repository';
 import { CustomLoggerModule } from 'src/logger/logger.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PayableController } from './payable.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Payable } from './entities/payable.entity';
+import { CustomersFee } from 'src/customers/entitites/customers_fee.entity';
 
 @Module({
   imports: [
     CustomLoggerModule,
-    TypeOrmModule.forFeature([PayableRepository]),
-    TypeOrmModule.forFeature([CustomersFeeRepository]),
+    TypeOrmModule.forFeature([Payable]),
+    TypeOrmModule.forFeature([CustomersFee]),
     ClientsModule.register([
       {
         name: 'BALANCE_SERVICE',
@@ -28,6 +29,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     DatabaseModule,
   ],
   providers: [PayableService],
-  controllers: [],
+  controllers: [PayableController],
 })
 export class PayableModule {}

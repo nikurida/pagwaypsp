@@ -1,14 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UsersDto } from './dto/users.dto';
 import * as bcrypt from 'bcrypt';
-import { UsersRepository } from './repositories/user.repository';
 import { User } from './user';
+import { EntityManager, Repository } from 'typeorm';
+import { Users as UsersEntity } from './entities/users.entity';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
 
-  constructor(private userRepository: UsersRepository) {}
+  constructor(
+    @InjectRepository(UsersEntity)
+    private userRepository: Repository<UsersEntity>,
+    @InjectEntityManager()
+    private entityManager: EntityManager,
+  ) {}
 
   async create(userDto: UsersDto): Promise<User> {
     const { password } = userDto;
@@ -21,9 +28,9 @@ export class UserService {
     });
 
     try {
-      const user = await this.userRepository.dataSource.transaction(
+      const user = await this.entityManager.transaction(
         async (entityManager) => {
-          const savedUser = await entityManager.save(buildedUser);
+          const savedUser = await entityManager.save(UsersEntity, buildedUser);
           return savedUser;
         },
       );

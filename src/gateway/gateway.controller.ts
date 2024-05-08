@@ -11,7 +11,6 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { TransactionDto } from '../transactions/dto/transactions.dto';
-import { BalanceDto } from '../balance/dto/balance.dto';
 //import { AuthGuard } from '@nestjs/passport';
 import { UsersDto } from 'src/users/dto/users.dto';
 import { Logger } from 'nestjs-pino';
@@ -37,17 +36,18 @@ export class GatewayController {
     this.logger.log(`Creating transaction: ${JSON.stringify(transactionDto)}`);
 
     try {
-      const response = await firstValueFrom(
-        this.transactionsClient.emit<{ status: string; message: string }>(
-          'create_transaction',
-          transactionDto,
-        ),
+      const { status, message, data } = await firstValueFrom(
+        this.transactionsClient.send<{
+          status: string;
+          message: string;
+          data: any;
+        }>('create_transaction', transactionDto),
       );
 
-      if (response && response.status === 'success') {
-        return { status: 201, message: response.message };
+      if (status === 'success') {
+        return { status: 201, message, data };
       } else {
-        throw new BadRequestException(response.message);
+        throw new BadRequestException(message);
       }
     } catch (e) {
       this.logger.error(e);
@@ -61,29 +61,78 @@ export class GatewayController {
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiBody({ type: UsersDto })
   //@UseGuards(AuthGuard('jwt'))
-  createUser(@Body() userDto: UsersDto) {
-    return this.usersClient.send({ role: 'user', cmd: 'create' }, userDto);
+  async createUser(@Body() userDto: UsersDto) {
+    this.logger.log(`Creating User: ${JSON.stringify(UsersDto)}`);
+
+    try {
+      const { status, message, data } = await firstValueFrom(
+        this.usersClient.send<{ status: string; message: string; data: any }>(
+          'create_user',
+          userDto,
+        ),
+      );
+
+      if (status === 'success') {
+        return { status: 201, message, data };
+      } else {
+        throw new BadRequestException(message);
+      }
+    } catch (e) {
+      this.logger.error(e);
+      throw new BadRequestException('Failed to create User');
+    }
   }
 
   @Get('transactions')
   @ApiTags('Transactions')
   @ApiOperation({ summary: 'Get all transactions' })
   @ApiResponse({ status: 200, description: 'List of transactions' })
-  //@UseGuards(AuthGuard('jwt'))
-  getAllTransactions() {
-    return this.transactionsClient.send(
-      { role: 'transaction', cmd: 'get' },
-      {},
-    );
+  async getAllTransactions() {
+    this.logger.log(`Getting Transactions...`);
+
+    try {
+      const { status, message, data } = await firstValueFrom(
+        this.transactionsClient.send<{
+          status: string;
+          message: string;
+          data: any;
+        }>('get_all_transaction', {}),
+      );
+
+      if (status === 'success') {
+        return { status: 201, message, data };
+      } else {
+        throw new BadRequestException(message);
+      }
+    } catch (e) {
+      this.logger.error(e);
+      throw new BadRequestException('Failed to create User');
+    }
   }
 
   @Get('balance/:customerId')
   @ApiTags('Balance')
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
-  @ApiBody({ type: BalanceDto })
   //@UseGuards(AuthGuard('jwt'))
-  getCustomerBalance(@Param('customerId') customerId: number) {
-    return this.balanceClient.send({ role: 'balance', cmd: 'get' }, customerId);
+  async getCustomerBalance(@Param('customerId') customerId: number) {
+    this.logger.log(`Getting Customer Balance...`);
+    try {
+      const { status, message, data } = await firstValueFrom(
+        this.balanceClient.send<{ status: string; message: string; data: any }>(
+          'get_customer_balance',
+          customerId,
+        ),
+      );
+
+      if (status === 'success') {
+        return { status: 201, message, data };
+      } else {
+        throw new BadRequestException(message);
+      }
+    } catch (e) {
+      this.logger.error(e);
+      throw new BadRequestException('Failed to get Customer Balance');
+    }
   }
 }
