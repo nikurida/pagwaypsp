@@ -17,7 +17,6 @@ $ npm install
 ## Rodando o projeto
 
 ```bash
-# development
 $ docker compose up --build
 ```
 
