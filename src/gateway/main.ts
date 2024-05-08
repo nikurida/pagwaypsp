@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { GatewayModule } from './gateway.module';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
+import { collectDefaultMetrics, register } from 'prom-client';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule, {
@@ -34,6 +35,15 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
+  });
+
+  collectDefaultMetrics({
+    prefix: 'gateway_',
+  });
+
+  app.getHttpAdapter().get('/metrics', async (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.send(await register.metrics());
   });
 
   SwaggerModule.setup('api', app, document);

@@ -77,10 +77,42 @@ services:
       - postgres
     networks:
       - app-network
+  
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - rabbitmq
+      - api-gateway
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3030:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+  
+  portainer:
+    image: portainer/portainer-ce
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - app-network
 
 volumes:
   postgres-data:
   rabbitmq-data:
+  portainer_data:
 
 networks:
   app-network:
