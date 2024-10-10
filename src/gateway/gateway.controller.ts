@@ -36,7 +36,7 @@ export class GatewayController {
   async createTransaction(
     @Body() transactionDto: TransactionDto,
     @Res() res: Response,
-  ): Promise<any> {
+  ) {
     this.logger.log(`Creating transaction: ${JSON.stringify(transactionDto)}`);
 
     try {
@@ -45,10 +45,13 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.CREATED).json(result);
+        return res.status(HttpStatus.CREATED).json(result);
       }
 
-      throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Fail to create transaction',
+        HttpStatus.BAD_REQUEST,
+      );
     } catch (e) {
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
@@ -70,7 +73,7 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.CREATED).json(result);
+        return res.status(HttpStatus.CREATED).json(result);
       }
 
       throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
@@ -93,7 +96,7 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.OK).json(result);
+        return res.status(HttpStatus.OK).json(result);
       }
 
       throw new HttpException(
@@ -122,7 +125,7 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.OK).json(result);
+        return res.status(HttpStatus.OK).json(result);
       }
 
       throw new HttpException(
