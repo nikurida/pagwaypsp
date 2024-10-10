@@ -18,5 +18,5 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["./wait-for-it.sh", "rabbitmq:5672", "--", "node", "dist/gateway/main.js"]
+CMD ["node", "dist/gateway/main.js"]
 

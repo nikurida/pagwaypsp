@@ -16,5 +16,5 @@ RUN chmod +x /usr/src/app/wait-for-it.sh
 
 RUN npm run build
 
-CMD ["./wait-for-it.sh", "rabbitmq:5672", "--", "node", "dist/transactions/main.js"]
+CMD ["node", "dist/transactions/main.js"]
 
