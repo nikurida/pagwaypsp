@@ -76,6 +76,16 @@ services:
     networks:
       - app-network
 
+  auth:
+    build:
+      context: .
+      dockerfile: ./src/auth/Dockerfile
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - app-network
+
   api-gateway:
     build:
       context: .

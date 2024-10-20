@@ -8,12 +8,10 @@ import {
   Res,
   HttpStatus,
   HttpException,
-  //UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { TransactionDto } from '../transactions/dto/transactions.dto';
-//import { AuthGuard } from '@nestjs/passport';
 import { UsersDto } from 'src/users/dto/users.dto';
 import { Logger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
@@ -27,6 +25,7 @@ export class GatewayController {
     @Inject('TRANSACTIONS_SERVICE') private transactionsClient: ClientProxy,
     @Inject('BALANCE_SERVICE') private balanceClient: ClientProxy,
     @Inject('CUSTOMERS_SERVICE') private customerClient: ClientProxy,
+    @Inject('AUTH_SERVICE') private authClient: ClientProxy,
     private readonly logger: Logger,
   ) {}
 
@@ -91,7 +90,6 @@ export class GatewayController {
   @ApiOperation({ summary: 'Create user' })
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiBody({ type: UsersDto })
-  //@UseGuards(AuthGuard('jwt'))
   async createUser(@Body() userDto: UsersDto, @Res() res: Response) {
     this.logger.log(`Creating User: ${JSON.stringify(UsersDto)}`);
 
@@ -143,7 +141,6 @@ export class GatewayController {
   @ApiTags('Balance')
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
-  //@UseGuards(AuthGuard('jwt'))
   async getCustomerBalance(
     @Param('customerId') customerId: number,
     @Res() res: Response,
@@ -163,6 +160,23 @@ export class GatewayController {
         HttpStatus.NOT_FOUND,
       );
     } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  @Post('auth/login')
+  async login(@Body() data, @Res() res: Response) {
+    try {
+      this.logger.log(`Logging in...`);
+      const auth = await firstValueFrom(
+        this.authClient.send('login', { username: 'admin', password: 'admin' }),
+      );
+      this.logger.log(`Logged in!`);
+      this.logger.log(JSON.stringify(auth));
+      return res.status(HttpStatus.OK).json(auth);
+    } catch (e) {
+      this.logger.log(`Error logging in`);
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
