@@ -8,6 +8,7 @@ import {
   Res,
   HttpStatus,
   HttpException,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
@@ -17,6 +18,8 @@ import { Logger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
 import { CustomersDto as CustomersDto } from 'src/customers/dto/customers.dto';
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller()
 export class GatewayController {
@@ -25,8 +28,8 @@ export class GatewayController {
     @Inject('TRANSACTIONS_SERVICE') private transactionsClient: ClientProxy,
     @Inject('BALANCE_SERVICE') private balanceClient: ClientProxy,
     @Inject('CUSTOMERS_SERVICE') private customerClient: ClientProxy,
-    @Inject('AUTH_SERVICE') private authClient: ClientProxy,
     private readonly logger: Logger,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('transaction')
@@ -141,6 +144,7 @@ export class GatewayController {
   @ApiTags('Balance')
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
+  @UseGuards(AuthGuard('jwt'))
   async getCustomerBalance(
     @Param('customerId') customerId: number,
     @Res() res: Response,
@@ -166,17 +170,30 @@ export class GatewayController {
   }
 
   @Post('auth/login')
-  async login(@Body() data, @Res() res: Response) {
+  @ApiBody({ type: () => ({ username: 'denis' }) })
+  @ApiOperation({ summary: 'Get user access token' })
+  @ApiResponse({ status: 200, description: 'Access token granted' })
+  async login(
+    @Body() { username }: { username: string },
+    @Res() res: Response,
+  ) {
     try {
-      this.logger.log(`Logging in...`);
-      const auth = await firstValueFrom(
-        this.authClient.send('login', { username: 'admin', password: 'admin' }),
-      );
-      this.logger.log(`Logged in!`);
-      this.logger.log(JSON.stringify(auth));
-      return res.status(HttpStatus.OK).json(auth);
+      this.logger.log(`Finding user: ${username}`);
+      const result = await firstValueFrom(
+        this.usersClient.send('find_user', username),
+      ).catch((e) => {
+        this.logger.error(e);
+        return null;
+      });
+
+      if (!result) {
+        res.status(HttpStatus.NOT_FOUND).json({ message: 'User not found' });
+      }
+
+      const token = this.jwtService.sign({ username });
+
+      return res.status(HttpStatus.OK).json({ token });
     } catch (e) {
-      this.logger.log(`Error logging in`);
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }

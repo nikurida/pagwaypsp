@@ -24,13 +24,11 @@ async function bootstrap() {
     .setDescription(
       'Pagway API - Com ferramentas disponíveis somente em ambiente de desenvolvimento',
     )
-    .addApiKey({ name: 'X-API-KEY', type: 'apiKey' })
     .setVersion('1.0')
     .addTag('Transactions')
     .addTag('Users')
     .addTag('Balance')
     .addTag('Customer')
-    .addApiKey({ type: 'apiKey', name: 'X-API-KEY' })
     .addBearerAuth({ type: 'http', scheme: 'Bearer', bearerFormat: 'JWT' })
     .build();
 

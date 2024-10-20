@@ -17,7 +17,6 @@ import {
       buildService('balance'),
       buildService('users'),
       buildService('customers'),
-      buildService('auth'),
     ]),
   ],
   controllers: [GatewayController],
