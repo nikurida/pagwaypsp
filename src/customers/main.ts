@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
+import { setupGlobalPipes } from 'src/common/setupGlobalPipes';
 import { CustomersModule } from './customers.module';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     CustomersModule,
@@ -23,7 +23,15 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
-
+  setupGlobalPipes(app);
   await app.listen();
 }
-bootstrap();
+
+console.log('Starting customers microservice...');
+bootstrap()
+  .then(() => {
+    console.log('Customers microservice started');
+  })
+  .catch((err) => {
+    console.log('Error starting customers microservice', err);
+  });

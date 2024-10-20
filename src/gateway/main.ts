@@ -29,6 +29,7 @@ async function bootstrap() {
     .addTag('Transactions')
     .addTag('Users')
     .addTag('Balance')
+    .addTag('Customer')
     .addApiKey({ type: 'apiKey', name: 'X-API-KEY' })
     .addBearerAuth({ type: 'http', scheme: 'Bearer', bearerFormat: 'JWT' })
     .build();

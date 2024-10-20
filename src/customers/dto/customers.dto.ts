@@ -18,12 +18,12 @@ export class CustomersDto {
 
   @IsArray()
   @ApiProperty({
-    example: 'transactions',
+    example: [],
     description: 'Customer transactions',
   })
   transactions: Transactions[];
 
   @IsArray()
-  @ApiProperty({ example: 'payables', description: 'Customer payables' })
+  @ApiProperty({ example: [], description: 'Customer payables' })
   payable: Payable[];
 }
