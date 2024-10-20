@@ -187,7 +187,9 @@ export class GatewayController {
       });
 
       if (!result) {
-        res.status(HttpStatus.NOT_FOUND).json({ message: 'User not found' });
+        return res
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'User not found' });
       }
 
       const token = this.jwtService.sign({ username });
