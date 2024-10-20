@@ -19,9 +19,7 @@ export class UserService {
 
   async create(userDto: UsersDto): Promise<User> {
     const { password } = userDto;
-
     const hashedPassword = await this.getBcryptPassword(password);
-
     const buildedUser = await this.buildUser({
       ...userDto,
       password: hashedPassword,

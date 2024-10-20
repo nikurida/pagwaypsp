@@ -66,6 +66,16 @@ services:
     networks:
       - app-network
 
+  customers:
+    build:
+      context: .
+      dockerfile: ./src/customers/Dockerfile
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - app-network
+
   api-gateway:
     build:
       context: .
