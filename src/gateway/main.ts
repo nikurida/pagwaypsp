@@ -3,6 +3,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { GatewayModule } from './gateway.module';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { collectDefaultMetrics, register } from 'prom-client';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule, {
@@ -11,9 +12,10 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
-
+  app.use(cookieParser());
   app.enableCors({
-    origin: '*',
+    origin: 'http://localhost:5173',
+    credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,

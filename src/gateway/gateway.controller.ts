@@ -9,6 +9,7 @@ import {
   HttpStatus,
   HttpException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
@@ -194,10 +195,44 @@ export class GatewayController {
 
       const token = this.jwtService.sign({ username });
 
-      return res.status(HttpStatus.OK).json({ token });
+      return res
+        .cookie('jwt', token, {
+          httpOnly: true, // Não permite que o JavaScript do navegador acesse o cookie
+          sameSite: 'strict', // Para evitar CSRF (pode ser 'lax' ou 'none' dependendo do caso de uso)
+          maxAge: 24 * 60 * 60 * 1000, // Define a duração do cookie (ex: 24 horas)
+        })
+        .status(HttpStatus.OK)
+        .json({ token });
     } catch (e) {
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
+  }
+
+  @Get('auth/me')
+  async me(@Req() req: Request, @Res() res: Response) {
+    try {
+      const token = (req as { cookies?: Record<string, string> })?.cookies.jwt;
+
+      if (!token) {
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'Unauthorized' });
+      }
+
+      const { username } = this.jwtService.verify(token);
+      return res.status(HttpStatus.OK).json({ username });
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  @Get('auth/logout')
+  async logout(@Res() res: Response) {
+    return res
+      .clearCookie('jwt')
+      .status(HttpStatus.OK)
+      .json({ message: 'Logged out' });
   }
 }
