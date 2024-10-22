@@ -16,7 +16,4 @@ RUN chmod +x /usr/src/app/wait-for-it.sh
 
 RUN npm run build
 
-EXPOSE 3000
-
-CMD ["node", "dist/gateway/main.js"]
-
+CMD ["node", "dist/customers/main.js"]

@@ -7,27 +7,27 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - app-network
 
   rabbitmq:
-    image: "rabbitmq:3-management"
+    image: 'rabbitmq:3-management'
     environment:
-            - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - '15672:15672'
+      - '5672:5672'
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - app-network
 
   transactions:
-    build: 
+    build:
       context: .
       dockerfile: ./src/transactions/Dockerfile
     depends_on:
@@ -37,7 +37,7 @@ services:
       - app-network
 
   payable:
-    build: 
+    build:
       context: .
       dockerfile: ./src/payable/Dockerfile
     depends_on:
@@ -47,7 +47,7 @@ services:
       - app-network
 
   balance:
-    build: 
+    build:
       context: .
       dockerfile: ./src/balance/Dockerfile
     depends_on:
@@ -55,11 +55,21 @@ services:
       - postgres
     networks:
       - app-network
-  
+
   users:
-    build: 
+    build:
       context: .
       dockerfile: ./src/users/Dockerfile
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - app-network
+
+  customers:
+    build:
+      context: .
+      dockerfile: ./src/customers/Dockerfile
     depends_on:
       - rabbitmq
       - postgres
@@ -71,19 +81,19 @@ services:
       context: .
       dockerfile: ./src/gateway/Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - rabbitmq
       - postgres
     networks:
       - app-network
-  
+
   prometheus:
     image: prom/prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "9090:9090"
+      - '9090:9090'
     depends_on:
       - rabbitmq
       - api-gateway
@@ -93,19 +103,33 @@ services:
   grafana:
     image: grafana/grafana
     ports:
-      - "3030:3000"
+      - '3030:3000'
     depends_on:
       - prometheus
     networks:
       - app-network
-  
+
   portainer:
     image: portainer/portainer-ce
     ports:
-      - "9000:9000"
+      - '9000:9000'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: postgres
+      PMA_PORT: 5432
+      MYSQL_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
+      PMA_ABSOLUTE_URI: http://localhost:8080/
+    ports:
+      - '8080:80'
+    depends_on:
+      - postgres
     networks:
       - app-network
 

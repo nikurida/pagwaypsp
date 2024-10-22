@@ -18,6 +18,7 @@ import { UsersDto } from 'src/users/dto/users.dto';
 import { Logger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
+import { CustomersDto as CustomersDto } from 'src/customers/dto/customers.dto';
 
 @Controller()
 export class GatewayController {
@@ -25,6 +26,7 @@ export class GatewayController {
     @Inject('USERS_SERVICE') private usersClient: ClientProxy,
     @Inject('TRANSACTIONS_SERVICE') private transactionsClient: ClientProxy,
     @Inject('BALANCE_SERVICE') private balanceClient: ClientProxy,
+    @Inject('CUSTOMERS_SERVICE') private customerClient: ClientProxy,
     private readonly logger: Logger,
   ) {}
 
@@ -36,7 +38,7 @@ export class GatewayController {
   async createTransaction(
     @Body() transactionDto: TransactionDto,
     @Res() res: Response,
-  ): Promise<any> {
+  ) {
     this.logger.log(`Creating transaction: ${JSON.stringify(transactionDto)}`);
 
     try {
@@ -45,10 +47,39 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.CREATED).json(result);
+        return res.status(HttpStatus.CREATED).json(result);
       }
 
-      throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Fail to create transaction',
+        HttpStatus.BAD_REQUEST,
+      );
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  @Get('transactions')
+  @ApiTags('Transactions')
+  @ApiOperation({ summary: 'Get all transactions' })
+  @ApiResponse({ status: 200, description: 'List of transactions' })
+  async getAllTransactions(@Res() res: Response) {
+    this.logger.log(`Getting Transactions...`);
+
+    try {
+      const result = await firstValueFrom(
+        this.transactionsClient.send('get_all_transaction', {}),
+      );
+
+      if (result) {
+        return res.status(HttpStatus.OK).json(result);
+      }
+
+      throw new HttpException(
+        'Fail to get transactions',
+        HttpStatus.BAD_REQUEST,
+      );
     } catch (e) {
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
@@ -70,7 +101,7 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.CREATED).json(result);
+        return res.status(HttpStatus.CREATED).json(result);
       }
 
       throw new HttpException('Fail to create user', HttpStatus.BAD_REQUEST);
@@ -80,26 +111,28 @@ export class GatewayController {
     }
   }
 
-  @Get('transactions')
-  @ApiTags('Transactions')
-  @ApiOperation({ summary: 'Get all transactions' })
-  @ApiResponse({ status: 200, description: 'List of transactions' })
-  async getAllTransactions(@Res() res: Response) {
-    this.logger.log(`Getting Transactions...`);
+  @Post('customer')
+  @ApiTags('Customer')
+  @ApiOperation({ summary: 'Create a customer' })
+  @ApiResponse({ status: 201, description: 'Customer created!' })
+  @ApiBody({ type: CustomersDto })
+  async createCustomer(
+    @Body() customerDto: CustomersDto,
+    @Res() res: Response,
+  ) {
+    this.logger.log(`Creating Customer: ${JSON.stringify(CustomersDto)}`);
 
     try {
       const result = await firstValueFrom(
-        this.transactionsClient.send('get_all_transaction', {}),
+        this.customerClient.send('create_customer', customerDto),
       );
-
-      if (result) {
-        res.status(HttpStatus.OK).json(result);
+      if (!result) {
+        throw new HttpException(
+          'Fail to create Customer',
+          HttpStatus.BAD_REQUEST,
+        );
       }
-
-      throw new HttpException(
-        'Fail to get transactions',
-        HttpStatus.BAD_REQUEST,
-      );
+      return res.status(HttpStatus.CREATED).json(result);
     } catch (e) {
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
@@ -122,7 +155,7 @@ export class GatewayController {
       );
 
       if (result) {
-        res.status(HttpStatus.OK).json(result);
+        return res.status(HttpStatus.OK).json(result);
       }
 
       throw new HttpException(
