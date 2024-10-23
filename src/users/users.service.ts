@@ -39,6 +39,15 @@ export class UserService {
     }
   }
 
+  async findByUsername(username: string): Promise<User | null> {
+    try {
+      const user = await this.userRepository.findOne({ where: { username } });
+      return user;
+    } catch (e) {
+      this.logger.error(e);
+    }
+  }
+
   private async buildUser(user: UsersDto) {
     try {
       const buildedUser = await this.userRepository.create(user);

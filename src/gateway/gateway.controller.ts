@@ -8,17 +8,19 @@ import {
   Res,
   HttpStatus,
   HttpException,
-  //UseGuards,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { TransactionDto } from '../transactions/dto/transactions.dto';
-//import { AuthGuard } from '@nestjs/passport';
 import { UsersDto } from 'src/users/dto/users.dto';
 import { Logger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
 import { CustomersDto as CustomersDto } from 'src/customers/dto/customers.dto';
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller()
 export class GatewayController {
@@ -28,6 +30,7 @@ export class GatewayController {
     @Inject('BALANCE_SERVICE') private balanceClient: ClientProxy,
     @Inject('CUSTOMERS_SERVICE') private customerClient: ClientProxy,
     private readonly logger: Logger,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('transaction')
@@ -91,7 +94,6 @@ export class GatewayController {
   @ApiOperation({ summary: 'Create user' })
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiBody({ type: UsersDto })
-  //@UseGuards(AuthGuard('jwt'))
   async createUser(@Body() userDto: UsersDto, @Res() res: Response) {
     this.logger.log(`Creating User: ${JSON.stringify(UsersDto)}`);
 
@@ -143,7 +145,7 @@ export class GatewayController {
   @ApiTags('Balance')
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
-  //@UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'))
   async getCustomerBalance(
     @Param('customerId') customerId: number,
     @Res() res: Response,
@@ -166,5 +168,71 @@ export class GatewayController {
       this.logger.error(e);
       throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
     }
+  }
+
+  @Post('auth/login')
+  @ApiBody({ type: () => ({ username: 'denis' }) })
+  @ApiOperation({ summary: 'Get user access token' })
+  @ApiResponse({ status: 200, description: 'Access token granted' })
+  async login(
+    @Body() { username }: { username: string },
+    @Res() res: Response,
+  ) {
+    try {
+      this.logger.log(`Finding user: ${username}`);
+      const result = await firstValueFrom(
+        this.usersClient.send('find_user', username),
+      ).catch((e) => {
+        this.logger.error(e);
+        return null;
+      });
+
+      if (!result) {
+        return res
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'User not found' });
+      }
+
+      const token = this.jwtService.sign({ username });
+
+      return res
+        .cookie('jwt', token, {
+          httpOnly: true, // Não permite que o JavaScript do navegador acesse o cookie
+          sameSite: 'strict', // Para evitar CSRF (pode ser 'lax' ou 'none' dependendo do caso de uso)
+          maxAge: 24 * 60 * 60 * 1000, // Define a duração do cookie (ex: 24 horas)
+        })
+        .status(HttpStatus.OK)
+        .json({ token });
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  @Get('auth/me')
+  async me(@Req() req: Request, @Res() res: Response) {
+    try {
+      const token = (req as { cookies?: Record<string, string> })?.cookies.jwt;
+
+      if (!token) {
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'Unauthorized' });
+      }
+
+      const { username } = this.jwtService.verify(token);
+      return res.status(HttpStatus.OK).json({ username });
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  @Get('auth/logout')
+  async logout(@Res() res: Response) {
+    return res
+      .clearCookie('jwt')
+      .status(HttpStatus.OK)
+      .json({ message: 'Logged out' });
   }
 }

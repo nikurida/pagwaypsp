@@ -26,4 +26,22 @@ export class UserController {
       throw new HttpException('Internal error', HttpStatus.BAD_REQUEST);
     }
   }
+
+  @MessagePattern('find_user')
+  async findUserByUsername(@Payload() username: string) {
+    this.logger.log(`Finding user by username: ${username}`);
+
+    try {
+      const result = await this.userService.findByUsername(username);
+
+      if (result) {
+        return result;
+      }
+
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal error', HttpStatus.BAD_REQUEST);
+    }
+  }
 }
