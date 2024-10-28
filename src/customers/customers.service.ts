@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { EntityManager, Repository } from 'typeorm';
 import { Customers as Customers } from './entitites/customers.entity';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { CustomersFee as Fee } from './entitites/customers_fee.entity';
 
 type Identity<T> = T extends object ? { [K in keyof T]: T[K] } : T;
 type Customer = Identity<CustomersDto>;
@@ -15,6 +16,8 @@ export class CustomerService {
   constructor(
     @InjectRepository(Customers)
     private repo: Repository<Customers>,
+    @InjectRepository(Fee)
+    private feeRepo: Repository<Fee>,
     @InjectEntityManager()
     private mngr: EntityManager,
   ) {}
@@ -22,9 +25,17 @@ export class CustomerService {
   async create(customerDto: CustomersDto): Promise<Customer> {
     try {
       const entity = this.repo.create(customerDto);
-      return await this.mngr.transaction(
+      const customer = await this.mngr.transaction(
         async (mngr) => await mngr.save(Customers, entity),
       );
+
+      const feeDto = { customerId: customer.id, fee: 0.03 };
+      const feeEntity = this.feeRepo.create(feeDto);
+      await this.mngr.transaction(
+        async (mngr) => await mngr.save(Fee, feeEntity),
+      );
+
+      return customer;
     } catch (err) {
       this.logger.error(err);
     }
