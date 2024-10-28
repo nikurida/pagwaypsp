@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { EntityManager, Repository } from 'typeorm';
 import { Customers as Customers } from './entitites/customers.entity';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { CustomersFee } from './entitites/customers_fee.entity';
 
 type Identity<T> = T extends object ? { [K in keyof T]: T[K] } : T;
 type Customer = Identity<CustomersDto>;
@@ -15,6 +16,8 @@ export class CustomerService {
   constructor(
     @InjectRepository(Customers)
     private repo: Repository<Customers>,
+    @InjectRepository(CustomersFee)
+    private feeRepo: Repository<CustomersFee>,
     @InjectEntityManager()
     private mngr: EntityManager,
   ) {}
@@ -22,9 +25,23 @@ export class CustomerService {
   async create(customerDto: CustomersDto): Promise<Customer> {
     try {
       const entity = this.repo.create(customerDto);
-      return await this.mngr.transaction(
+      const customer = await this.mngr.transaction(
         async (mngr) => await mngr.save(Customers, entity),
       );
+
+      const fee = await this.mngr.transaction(async (mngr) => {
+        const fee = await mngr.save(
+          CustomersFee,
+          this.feeRepo.create({ customerId: customer.id, fee: 0.03 }),
+        );
+        this.logger.log(`Fee created: ${JSON.stringify(fee)}`);
+        return fee;
+      });
+
+      this.logger.log(`Customer created: ${JSON.stringify(customer)}`);
+      this.logger.log(`Customer fee created: ${JSON.stringify(fee)}`);
+
+      return customer;
     } catch (err) {
       this.logger.error(err);
     }
