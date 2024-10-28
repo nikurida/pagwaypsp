@@ -119,20 +119,6 @@ services:
     networks:
       - app-network
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    environment:
-      PMA_HOST: postgres
-      PMA_PORT: 5432
-      MYSQL_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
-      PMA_ABSOLUTE_URI: http://localhost:8080/
-    ports:
-      - '8080:80'
-    depends_on:
-      - postgres
-    networks:
-      - app-network
-
 volumes:
   postgres-data:
   rabbitmq-data:
