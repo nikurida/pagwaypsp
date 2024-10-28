@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { EntityManager, Repository } from 'typeorm';
 import { Customers as Customers } from './entitites/customers.entity';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { CustomersFee } from './entitites/customers_fee.entity';
+import { CustomersFee as Fee } from './entitites/customers_fee.entity';
 
 type Identity<T> = T extends object ? { [K in keyof T]: T[K] } : T;
 type Customer = Identity<CustomersDto>;
@@ -16,8 +16,8 @@ export class CustomerService {
   constructor(
     @InjectRepository(Customers)
     private repo: Repository<Customers>,
-    @InjectRepository(CustomersFee)
-    private feeRepo: Repository<CustomersFee>,
+    @InjectRepository(Fee)
+    private feeRepo: Repository<Fee>,
     @InjectEntityManager()
     private mngr: EntityManager,
   ) {}
@@ -29,13 +29,11 @@ export class CustomerService {
         async (mngr) => await mngr.save(Customers, entity),
       );
 
-      const fee = await this.mngr.transaction(async (mngr) => {
-        const fee = await mngr.save(
-          CustomersFee,
-          this.feeRepo.create({ customerId: customer.id, fee: 0.03 }),
-        );
-        return fee;
-      });
+      const feeDto = { customerId: customer.id, fee: 0.03 };
+      const feeEntity = this.feeRepo.create(feeDto);
+      await this.mngr.transaction(
+        async (mngr) => await mngr.save(Fee, feeEntity),
+      );
 
       return customer;
     } catch (err) {
