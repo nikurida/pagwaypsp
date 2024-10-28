@@ -40,4 +40,12 @@ export class CustomerService {
       this.logger.error(err);
     }
   }
+
+  async findAll(): Promise<Customer[]> {
+    try {
+      return await this.repo.find();
+    } catch (err) {
+      this.logger.error(err);
+    }
+  }
 }

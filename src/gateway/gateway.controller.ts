@@ -20,7 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
 import { CustomersDto as CustomersDto } from 'src/customers/dto/customers.dto';
 import { JwtService } from '@nestjs/jwt';
-import { AuthGuard } from '@nestjs/passport';
+import { CookieGuard } from 'src/auth/CookieGuard.guard';
 
 @Controller()
 export class GatewayController {
@@ -89,6 +89,29 @@ export class GatewayController {
     }
   }
 
+  @Get('customers')
+  @ApiTags('Customers')
+  @ApiOperation({ summary: 'Get all customers' })
+  @ApiResponse({ status: 200, description: 'List of customers' })
+  async getAllCustomers(@Res() res: Response) {
+    this.logger.log(`Getting Customers...`);
+
+    try {
+      const result = await firstValueFrom(
+        this.customerClient.send('get_all_customers', {}),
+      );
+
+      if (result) {
+        return res.status(HttpStatus.OK).json(result);
+      }
+
+      throw new HttpException('Fail to get customers', HttpStatus.BAD_REQUEST);
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
   @Post('user')
   @ApiTags('Users')
   @ApiOperation({ summary: 'Create user' })
@@ -145,13 +168,21 @@ export class GatewayController {
   @ApiTags('Balance')
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CookieGuard)
   async getCustomerBalance(
     @Param('customerId') customerId: number,
     @Res() res: Response,
+    @Req() req: Request,
   ) {
-    this.logger.log(`Getting Customer Balance...`);
     try {
+      this.logger.log(`Getting Customer Balance...`);
+
+      if (!(req as any).cookies.jwt) {
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'Unauthorized' });
+      }
+
       const result = await firstValueFrom(
         this.balanceClient.send('get_customer_balance', customerId),
       );
