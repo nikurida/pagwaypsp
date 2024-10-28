@@ -89,6 +89,29 @@ export class GatewayController {
     }
   }
 
+  @Get('customers')
+  @ApiTags('Customers')
+  @ApiOperation({ summary: 'Get all customers' })
+  @ApiResponse({ status: 200, description: 'List of customers' })
+  async getAllCustomers(@Res() res: Response) {
+    this.logger.log(`Getting Customers...`);
+
+    try {
+      const result = await firstValueFrom(
+        this.customerClient.send('get_all_customers', {}),
+      );
+
+      if (result) {
+        return res.status(HttpStatus.OK).json(result);
+      }
+
+      throw new HttpException('Fail to get customers', HttpStatus.BAD_REQUEST);
+    } catch (e) {
+      this.logger.error(e);
+      throw new HttpException('Internal Error', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
   @Post('user')
   @ApiTags('Users')
   @ApiOperation({ summary: 'Create user' })
