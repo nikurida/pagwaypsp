@@ -34,12 +34,8 @@ export class CustomerService {
           CustomersFee,
           this.feeRepo.create({ customerId: customer.id, fee: 0.03 }),
         );
-        this.logger.log(`Fee created: ${JSON.stringify(fee)}`);
         return fee;
       });
-
-      this.logger.log(`Customer created: ${JSON.stringify(customer)}`);
-      this.logger.log(`Customer fee created: ${JSON.stringify(fee)}`);
 
       return customer;
     } catch (err) {
