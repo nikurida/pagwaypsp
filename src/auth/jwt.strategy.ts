@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { PinoLogger } from 'nestjs-pino';
 import { Strategy, ExtractJwt } from 'passport-jwt';
+import { CustomLoggerModule } from 'src/logger/logger.module';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly logger: PinoLogger) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

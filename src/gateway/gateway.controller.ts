@@ -20,7 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
 import { CustomersDto as CustomersDto } from 'src/customers/dto/customers.dto';
 import { JwtService } from '@nestjs/jwt';
-import { AuthGuard } from '@nestjs/passport';
+import { CookieGuard } from 'src/auth/CookieGuard.guard';
 
 @Controller()
 export class GatewayController {
@@ -168,13 +168,21 @@ export class GatewayController {
   @ApiTags('Balance')
   @ApiOperation({ summary: 'Get customer balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CookieGuard)
   async getCustomerBalance(
     @Param('customerId') customerId: number,
     @Res() res: Response,
+    @Req() req: Request,
   ) {
-    this.logger.log(`Getting Customer Balance...`);
     try {
+      this.logger.log(`Getting Customer Balance...`);
+
+      if (!(req as any).cookies.jwt) {
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'Unauthorized' });
+      }
+
       const result = await firstValueFrom(
         this.balanceClient.send('get_customer_balance', customerId),
       );
