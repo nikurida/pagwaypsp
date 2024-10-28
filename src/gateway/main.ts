@@ -30,7 +30,7 @@ async function bootstrap() {
     .addTag('Transactions')
     .addTag('Users')
     .addTag('Balance')
-    .addTag('Customer')
+    .addTag('Customers')
     .addBearerAuth({ type: 'http', scheme: 'Bearer', bearerFormat: 'JWT' })
     .build();
 

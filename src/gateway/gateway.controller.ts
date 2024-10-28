@@ -137,7 +137,7 @@ export class GatewayController {
   }
 
   @Post('customer')
-  @ApiTags('Customer')
+  @ApiTags('Customers')
   @ApiOperation({ summary: 'Create a customer' })
   @ApiResponse({ status: 201, description: 'Customer created!' })
   @ApiBody({ type: CustomersDto })
